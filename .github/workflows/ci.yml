@@ -1,0 +1,126 @@
+name: NixOS CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  installer-shell-checks:
+    name: Installer and helper checks
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Validate tracked shell scripts
+        run: |
+          mapfile -d '' -t bash_files < <(
+            git ls-files -z '*.sh' |
+              while IFS= read -r -d '' file; do
+                if head -n 1 "$file" | grep -qE '^#!.*(usr/bin/env[[:space:]]+bash|/bin/bash)'; then
+                  printf '%s\0' "$file"
+                fi
+              done
+          )
+
+          mapfile -d '' -t zsh_files < <(
+            git ls-files -z '*.sh' |
+              while IFS= read -r -d '' file; do
+                if head -n 1 "$file" | grep -qE '^#!.*(/bin/zsh|usr/bin/env[[:space:]]+zsh)'; then
+                  printf '%s\0' "$file"
+                fi
+              done
+          )
+
+          if ((${#bash_files[@]} == 0)); then
+            echo "No tracked Bash scripts were discovered." >&2
+            exit 1
+          fi
+
+          printf 'Bash syntax: %s\n' "${bash_files[@]}"
+          bash -n "${bash_files[@]}"
+
+          nix shell nixpkgs#shellcheck --command shellcheck \
+            --severity=error \
+            "${bash_files[@]}"
+
+          if ((${#zsh_files[@]} > 0)); then
+            printf 'Zsh syntax: %s\n' "${zsh_files[@]}"
+            nix shell nixpkgs#zsh --command zsh -n "${zsh_files[@]}"
+          fi
+
+      - name: Validate Python helper syntax
+        run: python3 -m py_compile scripts/extract-apple-logo-efires.py
+
+      - name: Validate GitHub Actions workflows
+        run: |
+          nix shell nixpkgs#actionlint --command actionlint
+
+  evaluate:
+    name: Evaluate ${{ matrix.profile }}
+    runs-on: ubuntu-24.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        profile:
+          - thinkpad-x1-carbon-gen13
+          - hp-z2-tower-g9
+          - apple-macbook-air-8-1
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Prepare local-only inputs
+        run: |
+          mkdir -p fonts/apple
+
+          cat > identity.json <<'EOF'
+          {
+            "hostName": "ci-host",
+            "userName": "ciuser",
+            "fullName": "CI User"
+          }
+          EOF
+
+          cat > profile.nix <<'EOF'
+          { ... }:
+
+          {
+            imports = [
+              ./hosts/${{ matrix.profile }}/default.nix
+            ];
+          }
+          EOF
+
+      - name: Evaluate NixOS system
+        run: |
+          nix-instantiate '<nixpkgs/nixos>' \
+            -A system \
+            -I nixos-config="$PWD/configuration.nix" \
+            >/dev/null
+
+      - name: Build Plymouth theme package
+        run: |
+          nix-build '<nixpkgs/nixos>' \
+            -A config.boot.plymouth.themePackages \
+            --no-out-link \
+            -I nixos-config="$PWD/configuration.nix" \
+            >/dev/null

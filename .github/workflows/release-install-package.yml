@@ -1,0 +1,66 @@
+name: Release install package
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-install-package-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  build-install-package:
+    name: Build install package ${{ github.event.release.tag_name }}
+    runs-on: ubuntu-24.04
+
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+
+    steps:
+      - name: Check out NixOS release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+          path: nixos
+          fetch-depth: 0
+
+      - name: Check out matching Home Manager release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: stdruwe/home-manager-workstations
+          ref: ${{ env.RELEASE_TAG }}
+          path: home-manager
+          fetch-depth: 0
+
+      - name: Install package tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes zstd
+
+      - name: Build tag-pinned install package
+        env:
+          HOME_MANAGER_REPO: ${{ github.workspace }}/home-manager
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          cd "$GITHUB_WORKSPACE/nixos"
+          ./prepare-install-package.sh \
+            --release-tag "$RELEASE_TAG" \
+            "$GITHUB_WORKSPACE/dist"
+
+      - name: Verify package checksum
+        run: |
+          cd "$GITHUB_WORKSPACE/dist"
+          sha256sum -c "nixos-install-${RELEASE_TAG}.tar.zst.sha256"
+
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release upload "$RELEASE_TAG" --clobber \
+            "$GITHUB_WORKSPACE/dist/nixos-install-${RELEASE_TAG}.tar.zst" \
+            "$GITHUB_WORKSPACE/dist/nixos-install-${RELEASE_TAG}.tar.zst.sha256"

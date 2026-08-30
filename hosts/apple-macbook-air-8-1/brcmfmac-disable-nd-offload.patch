@@ -1,0 +1,12 @@
+diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
+@@ -124,7 +124,7 @@ void brcmf_configure_arp_nd_offload(struct brcmf_if *ifp, bool enable)
+ 		}
+ 	}
+ 
+-	err = brcmf_fil_iovar_int_set(ifp, "ndoe", enable);
++	err = brcmf_fil_iovar_int_set(ifp, "ndoe", false);
+ 	if (err) {
+ 		brcmf_dbg(TRACE, "failed to configure (%d) ND offload err = %d\n",
+ 			  enable, err);

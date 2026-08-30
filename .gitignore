@@ -1,0 +1,24 @@
+result
+result-*
+*.img
+*.tar
+*.tar.gz
+*.tar.zst
+*.bundle
+
+# Local secrets and generated data
+secrets.nix
+secrets/
+/fonts/apple/
+/assets/local/
+/audio/easyeffects/local/
+/.local-sources/
+/result
+
+# Local system identity, profile and deployment data
+/profile.nix
+/identity.json
+/deployment.json
+
+# Legacy local host selector kept ignored during migration
+/host.nix

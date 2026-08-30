@@ -1,0 +1,329 @@
+// HP Z2 Tower G9 Plymouth theme.
+// Uses the shared 16:9 wallpaper and starts the Luks2 sequence after a short hold.
+
+SCREEN_W = Window.GetWidth();
+SCREEN_H = Window.GetHeight();
+
+START_DELAY_FRAMES        = 100;
+LUKS_TYPE_FRAMES_PER_STEP = 12;
+LUKS_TYPE_TOTAL_STEPS     = 5;
+LUKS_TYPE_TOTAL_FRAMES    = LUKS_TYPE_FRAMES_PER_STEP * LUKS_TYPE_TOTAL_STEPS;
+LUKS_SCALE_FRAMES         = 10;
+PASSWORD_FADE_FRAMES      = 8;
+EXIT_FRAMES               = 20;
+FINAL_FADE_FRAMES         = 18;
+SPINNER_HOLD_FRAMES       = 250;
+SPINNER_FADE_FRAMES       = 18;
+SPINNER_SPEED             = 0.105;
+
+TITLE_FONT    = "Sans Bold 112";
+LUKS_FONT     = "Sans Bold 52";
+PASSWORD_FONT = "Sans Bold 20";
+FINAL_FONT    = "Sans 36";
+MESSAGE_FONT  = "Sans 12";
+
+PHASE_DELAY      = 0;
+PHASE_LUKS_TYPE  = 1;
+PHASE_LUKS_SCALE = 2;
+PHASE_PASSWORD   = 3;
+PHASE_EXIT       = 4;
+PHASE_FINAL      = 5;
+
+phase = PHASE_DELAY;
+mode = Plymouth.GetMode();
+if (mode != "boot")
+    phase = PHASE_FINAL;
+
+phase_frame = 0;
+display_normal_flag = 0;
+pw_bullets = 0;
+pw_needs_update = 0;
+spinner_angle = 0.0;
+pw_y = 0;
+
+Window.SetBackgroundTopColor(0, 0, 0);
+Window.SetBackgroundBottomColor(0, 0, 0);
+
+background_img = Image("background.png");
+background_img = background_img.Scale(SCREEN_W, SCREEN_H);
+background_sprite = Sprite(background_img);
+background_sprite.SetX(0);
+background_sprite.SetY(0);
+background_sprite.SetZ(0);
+background_sprite.SetOpacity(1);
+
+// The HP source asset has a large square canvas. It is trimmed during the Nix
+// build before being made white on transparency. The displayed logo is 60 %
+// of the previous profile-specific size (22 % -> 13.2 % of the viewport width).
+hp_src = Image("hp-logo.png");
+hp_w = Math.Int(SCREEN_W * 0.132);
+hp_h = Math.Int(hp_src.GetHeight() * hp_w / hp_src.GetWidth());
+hp_img = hp_src.Scale(hp_w, hp_h);
+hp_sprite = Sprite(hp_img);
+hp_sprite.SetX(Math.Int(SCREEN_W * 0.045));
+hp_sprite.SetY(Math.Int(SCREEN_H * 0.055));
+hp_sprite.SetZ(2);
+hp_sprite.SetOpacity(1);
+
+luks_seq[0] = "L";
+luks_seq[1] = "Lu";
+luks_seq[2] = "Luk";
+luks_seq[3] = "Luks";
+luks_seq[4] = "Luks2";
+
+luks_orig_img = Image.Text("Luks2", 1, 1, 1, 1, TITLE_FONT);
+luks_final_img = Image.Text("Luks2", 1, 1, 1, 1, LUKS_FONT);
+luks_sprite = Sprite(luks_orig_img);
+luks_sprite.SetZ(6);
+luks_sprite.SetOpacity(0);
+
+luks_start_center_y = Math.Int(SCREEN_H * 0.455);
+luks_final_center_y = Math.Int(SCREEN_H * 0.405);
+luks_start_y = Math.Int(luks_start_center_y - luks_orig_img.GetHeight() / 2);
+luks_final_y = Math.Int(luks_final_center_y - luks_final_img.GetHeight() / 2);
+
+underline_src = Image("underline.png");
+underline_w = Math.Int(SCREEN_W * 0.28);
+underline_img = underline_src.Scale(underline_w, 2);
+underline_x = Math.Int((SCREEN_W - underline_w) / 2);
+underline_y = Math.Int(SCREEN_H * 0.505);
+underline_sprite = Sprite(underline_img);
+underline_sprite.SetX(underline_x);
+underline_sprite.SetY(underline_y);
+underline_sprite.SetZ(7);
+underline_sprite.SetOpacity(0);
+
+pw_sprite = Sprite();
+pw_sprite.SetZ(8);
+pw_sprite.SetOpacity(0);
+
+message_sprite = Sprite();
+message_sprite.SetZ(10);
+message_sprite.SetOpacity(0);
+
+final_text_img = Image.Text("NixOS", 1, 1, 1, 1, FINAL_FONT);
+final_text_sprite = Sprite(final_text_img);
+final_text_sprite.SetX(Math.Int((SCREEN_W - final_text_img.GetWidth()) / 2));
+final_text_sprite.SetY(Math.Int(SCREEN_H * 0.49 - final_text_img.GetHeight() / 2));
+final_text_sprite.SetZ(4);
+final_text_sprite.SetOpacity(0);
+
+spinner_src = Image("spinner.png");
+spinner_size = Math.Int(SCREEN_W * 0.030);
+spinner_img = spinner_src.Scale(spinner_size, spinner_size);
+spinner_cx = Math.Int(SCREEN_W / 2);
+spinner_cy = Math.Int(SCREEN_H * 0.585);
+spinner_sprite = Sprite();
+spinner_sprite.SetZ(4);
+spinner_sprite.SetOpacity(0);
+
+fun TransitionTo(new_phase) {
+    phase = new_phase;
+    phase_frame = -1;
+}
+
+fun UpdateDelay() {
+    // For the first two seconds only the wallpaper and HP logo are visible.
+    background_sprite.SetOpacity(1);
+    hp_sprite.SetOpacity(1);
+    luks_sprite.SetOpacity(0);
+    underline_sprite.SetOpacity(0);
+    pw_sprite.SetOpacity(0);
+
+    if (display_normal_flag)
+        TransitionTo(PHASE_FINAL);
+    else if (phase_frame >= START_DELAY_FRAMES - 1)
+        TransitionTo(PHASE_LUKS_TYPE);
+}
+
+fun UpdateLuksType() {
+    background_sprite.SetOpacity(1);
+    hp_sprite.SetOpacity(1);
+    underline_sprite.SetOpacity(0);
+    pw_sprite.SetOpacity(0);
+
+    // Type the LUKS title like the final ThinkPad profile stages:
+    // L -> Lu -> Luk -> Luks -> Luks2.
+    local.step = Math.Int(phase_frame / LUKS_TYPE_FRAMES_PER_STEP);
+    if (local.step >= LUKS_TYPE_TOTAL_STEPS)
+        local.step = LUKS_TYPE_TOTAL_STEPS - 1;
+
+    local.img = Image.Text(luks_seq[local.step], 1, 1, 1, 1, TITLE_FONT);
+    luks_sprite.SetImage(local.img);
+    luks_sprite.SetX(Math.Int((SCREEN_W - local.img.GetWidth()) / 2));
+    luks_sprite.SetY(Math.Int(luks_start_center_y - local.img.GetHeight() / 2));
+    luks_sprite.SetOpacity(1);
+
+    if (display_normal_flag) {
+        luks_sprite.SetImage(luks_orig_img);
+        luks_sprite.SetX(Math.Int((SCREEN_W - luks_orig_img.GetWidth()) / 2));
+        luks_sprite.SetY(luks_start_y);
+        TransitionTo(PHASE_EXIT);
+    } else if (phase_frame >= LUKS_TYPE_TOTAL_FRAMES - 1) {
+        luks_sprite.SetImage(luks_orig_img);
+        luks_sprite.SetX(Math.Int((SCREEN_W - luks_orig_img.GetWidth()) / 2));
+        luks_sprite.SetY(luks_start_y);
+        TransitionTo(PHASE_LUKS_SCALE);
+    }
+}
+
+fun UpdateLuksScale() {
+    background_sprite.SetOpacity(1);
+    hp_sprite.SetOpacity(1);
+
+    local.raw_t = Math.Min(phase_frame / (LUKS_SCALE_FRAMES - 1), 1.0);
+    local.t;
+    if (local.raw_t < 0.5)
+        local.t = 2.0 * local.raw_t * local.raw_t;
+    else
+        local.t = -1.0 + (4.0 - 2.0 * local.raw_t) * local.raw_t;
+
+    local.new_w = Math.Int(
+        luks_orig_img.GetWidth() +
+        (luks_final_img.GetWidth() - luks_orig_img.GetWidth()) * local.t
+    );
+    local.new_h = Math.Int(
+        luks_orig_img.GetHeight() +
+        (luks_final_img.GetHeight() - luks_orig_img.GetHeight()) * local.t
+    );
+
+    local.scaled = luks_orig_img.Scale(local.new_w, local.new_h);
+    luks_sprite.SetImage(local.scaled);
+    luks_sprite.SetX(Math.Int((SCREEN_W - local.new_w) / 2));
+    luks_sprite.SetY(Math.Int(luks_start_y + (luks_final_y - luks_start_y) * local.t));
+    luks_sprite.SetOpacity(1);
+    underline_sprite.SetOpacity(local.t);
+
+    if (phase_frame >= LUKS_SCALE_FRAMES - 1) {
+        luks_sprite.SetImage(luks_final_img);
+        luks_sprite.SetX(Math.Int((SCREEN_W - luks_final_img.GetWidth()) / 2));
+        luks_sprite.SetY(luks_final_y);
+        if (display_normal_flag)
+            TransitionTo(PHASE_EXIT);
+        else
+            TransitionTo(PHASE_PASSWORD);
+    }
+}
+
+fun UpdatePassword() {
+    background_sprite.SetOpacity(1);
+    hp_sprite.SetOpacity(1);
+    luks_sprite.SetImage(luks_final_img);
+    luks_sprite.SetX(Math.Int((SCREEN_W - luks_final_img.GetWidth()) / 2));
+    luks_sprite.SetY(luks_final_y);
+    luks_sprite.SetOpacity(1);
+    underline_sprite.SetOpacity(1);
+
+    if (pw_needs_update) {
+        local.password_text = "";
+        local.i = 0;
+        for (local.i = 0; local.i < pw_bullets; local.i++)
+            local.password_text = local.password_text + "*";
+
+        local.pw_img = Image.Text(local.password_text, 1, 1, 1, 1, PASSWORD_FONT);
+        pw_sprite.SetImage(local.pw_img);
+        pw_sprite.SetX(Math.Int((SCREEN_W - local.pw_img.GetWidth()) / 2));
+        pw_y = underline_y - local.pw_img.GetHeight() - Math.Int(SCREEN_H * 0.012);
+        pw_sprite.SetY(pw_y);
+        pw_needs_update = 0;
+    }
+
+    local.t = Math.Min(phase_frame / PASSWORD_FADE_FRAMES, 1.0);
+    pw_sprite.SetOpacity(local.t);
+
+    if (display_normal_flag)
+        TransitionTo(PHASE_EXIT);
+}
+
+fun UpdateExit() {
+    background_sprite.SetOpacity(1);
+    hp_sprite.SetOpacity(1);
+
+    local.raw_t = Math.Min(phase_frame / EXIT_FRAMES, 1.0);
+    local.t = local.raw_t * local.raw_t;
+    local.offset = Math.Int(local.t * SCREEN_H * 0.18);
+    local.opacity = 1.0 - local.t;
+
+    luks_sprite.SetY(luks_final_y + local.offset);
+    underline_sprite.SetY(underline_y + local.offset);
+    pw_sprite.SetY(pw_y + local.offset);
+
+    luks_sprite.SetOpacity(local.opacity);
+    underline_sprite.SetOpacity(local.opacity);
+    pw_sprite.SetOpacity(local.opacity);
+
+    if (phase_frame >= EXIT_FRAMES - 1) {
+        luks_sprite.SetOpacity(0);
+        underline_sprite.SetOpacity(0);
+        pw_sprite.SetOpacity(0);
+        TransitionTo(PHASE_FINAL);
+    }
+}
+
+fun UpdateFinal() {
+    background_sprite.SetOpacity(1);
+    hp_sprite.SetOpacity(1);
+
+    local.fade_in = Math.Min(phase_frame / FINAL_FADE_FRAMES, 1.0);
+    final_text_sprite.SetOpacity(local.fade_in);
+
+    local.spinner_opacity = local.fade_in;
+    if (phase_frame >= SPINNER_HOLD_FRAMES) {
+        local.fade_out_frame = phase_frame - SPINNER_HOLD_FRAMES;
+        local.spinner_opacity = 1.0 - Math.Min(local.fade_out_frame / SPINNER_FADE_FRAMES, 1.0);
+    }
+
+    if (local.spinner_opacity > 0) {
+        spinner_angle += SPINNER_SPEED;
+        if (spinner_angle >= 2.0 * Math.Pi)
+            spinner_angle -= 2.0 * Math.Pi;
+
+        local.rot_img = spinner_img.Rotate(spinner_angle);
+        local.rot_w = local.rot_img.GetWidth();
+        local.rot_h = local.rot_img.GetHeight();
+        spinner_sprite.SetImage(local.rot_img);
+        spinner_sprite.SetX(spinner_cx - Math.Int(local.rot_w / 2));
+        spinner_sprite.SetY(spinner_cy - Math.Int(local.rot_h / 2));
+    }
+
+    spinner_sprite.SetOpacity(local.spinner_opacity);
+}
+
+fun RefreshCallback() {
+    if (phase == PHASE_DELAY)
+        UpdateDelay();
+    else if (phase == PHASE_LUKS_TYPE)
+        UpdateLuksType();
+    else if (phase == PHASE_LUKS_SCALE)
+        UpdateLuksScale();
+    else if (phase == PHASE_PASSWORD)
+        UpdatePassword();
+    else if (phase == PHASE_EXIT)
+        UpdateExit();
+    else
+        UpdateFinal();
+
+    phase_frame++;
+}
+
+fun DisplayPasswordCallback(prompt, bullets) {
+    pw_bullets = bullets;
+    pw_needs_update = 1;
+}
+
+fun DisplayNormalCallback() {
+    display_normal_flag = 1;
+}
+
+fun MessageCallback(msg) {
+    local.m_img = Image.Text(msg, 0.72, 0.72, 0.72, 1, MESSAGE_FONT);
+    message_sprite.SetImage(local.m_img);
+    message_sprite.SetX(Math.Int((SCREEN_W - local.m_img.GetWidth()) / 2));
+    message_sprite.SetY(Math.Int(SCREEN_H - local.m_img.GetHeight() - SCREEN_H * 0.025));
+    message_sprite.SetOpacity(1);
+}
+
+Plymouth.SetRefreshFunction(RefreshCallback);
+Plymouth.SetDisplayPasswordFunction(DisplayPasswordCallback);
+Plymouth.SetDisplayNormalFunction(DisplayNormalCallback);
+Plymouth.SetMessageFunction(MessageCallback);
