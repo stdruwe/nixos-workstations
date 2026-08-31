@@ -26,6 +26,13 @@ in
 {
   nixpkgs.config.allowUnfree = true;
 
+  # btop upstream uses Linux perf events for Intel GPU statistics and CPU power
+  # monitoring. Grant only CAP_PERFMON to the wrapped executable instead of
+  # running btop as root or broadening it to CAP_SYS_ADMIN/CAP_DAC_READ_SEARCH.
+  # Direct Intel RAPL energy_uj access is handled separately and more narrowly
+  # through the powercap group in modules/common/rapl-access.nix. Preserve this
+  # split unless the relevant btop monitors have been retested unprivileged;
+  # see docs/operational-invariants.md.
   security.wrappers.btop = {
     source = "${btopPackage}/bin/btop";
     owner = "root";
