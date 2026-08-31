@@ -1,6 +1,6 @@
 # Installation – `hp-z2-tower-g9`
 
-Last updated: 2026-08-29
+Last updated: 2026-08-31
 
 The preferred fresh-install path is the combined version-matched package attached to the NixOS release. It contains the matching NixOS state and Home Manager at the same release tag.
 
@@ -54,13 +54,13 @@ The chosen disk is supplied to `hosts/hp-z2-tower-g9/disko.nix` at runtime with 
 
 ## Secure Boot / TPM2
 
-Installation initially uses the technical installation profile `hosts/hp-z2-tower-g9/installation.nix`. After the first boot, continue with:
+Installation initially uses the technical installation profile `hosts/hp-z2-tower-g9/installation.nix`. During the first activation the installer bootstrap state is migrated to `/etc/nixos/local/`. After the first boot, continue with:
 
 ```bash
 sudo /etc/nixos/post-install-security.sh prepare
 ```
 
-This changes local `profile.nix` to `hosts/hp-z2-tower-g9/default.nix`, creates Secure Boot keys when required, and builds the Lanzaboote configuration.
+This changes `/etc/nixos/local/profile.nix` to select `hosts/hp-z2-tower-g9/default.nix`, creates Secure Boot keys when required, and builds the Lanzaboote configuration.
 
 Then run `enroll-secureboot`, reboot/verify, and finally `enroll-tpm` as documented in `../../docs/secure-boot-tpm2.md`.
 
@@ -80,4 +80,4 @@ or an explicit target disk:
 sudo ./install-hp-z2-tower-g9.sh /dev/nvme0n1
 ```
 
-Hostname, username and display name are collected locally during installation and stored in untracked `profile.nix` and `identity.json` files.
+Hostname, username and display name are collected locally during installation. The root-level bootstrap files exist only until activation migrates the canonical recovery state to `/etc/nixos/local/profile.nix`, `/etc/nixos/local/identity.json` and `/etc/nixos/local/deployment.json`.
