@@ -1,6 +1,6 @@
 # Secure Boot / TPM2 after installation
 
-Last updated: 2026-08-30
+Last updated: 2026-08-31
 
 This guide applies to:
 
@@ -31,7 +31,16 @@ Both x86 installers select the target disk at runtime. With no disk argument the
 
 ## Local identity and deployment data
 
-`configuration.nix` imports the local untracked `profile.nix`. A local `identity.json` is also required.
+After activation, all canonical machine-local NixOS recovery state lives below `/etc/nixos/local/`:
+
+```text
+/etc/nixos/local/
+├── profile.nix
+├── identity.json
+└── deployment.json
+```
+
+`configuration.nix` imports `local/profile.nix`. `local/identity.json` contains the hostname, local username and display name:
 
 ```json
 {
@@ -41,7 +50,9 @@ Both x86 installers select the target disk at runtime. With no disk argument the
 }
 ```
 
-Optional deployment-specific infrastructure is stored separately in ignored `deployment.json`. It is not required for a normal local build and should be used for values such as Nix remote-builder endpoints or authorized builder client keys rather than embedding those values into hardware profiles.
+Optional deployment-specific infrastructure is stored in `local/deployment.json`. Use it for values such as Nix remote-builder endpoints or authorized builder client keys rather than embedding those values into hardware profiles. An empty deployment is `{}`.
+
+During installer bootstrap only, root-level `profile.nix`, `identity.json` and optional `deployment.json` are accepted temporarily. NixOS activation migrates them into `local/` automatically.
 
 There is no committed initial password hash. After `nixos-install`, the installer sets a fresh local user password.
 
@@ -58,8 +69,9 @@ findmnt /swap
 swapon --show
 bootctl status
 lsblk -f
-cat /etc/nixos/profile.nix
-cat /etc/nixos/identity.json
+cat /etc/nixos/local/profile.nix
+cat /etc/nixos/local/identity.json
+cat /etc/nixos/local/deployment.json
 ```
 
 ## Prepare Secure Boot / Lanzaboote
@@ -68,7 +80,7 @@ cat /etc/nixos/identity.json
 sudo /etc/nixos/post-install-security.sh prepare
 ```
 
-This step verifies UEFI Setup Mode, disabled Secure Boot, local profile/identity files and the Secure Boot module. It creates sbctl keys when required, changes the local installation profile to the normal hardware profile and runs `nixos-rebuild switch`. If the rebuild fails, the previous profile selector is restored.
+This step verifies UEFI Setup Mode, disabled Secure Boot, canonical local profile/identity files and the Secure Boot module. It creates sbctl keys when required, changes `local/profile.nix` from the installation profile to the normal hardware profile and runs `nixos-rebuild switch`. If the rebuild fails, the previous profile selector is restored.
 
 ## Enroll Secure Boot keys
 
@@ -98,6 +110,8 @@ The LUKS recovery passphrase remains available.
 ## `/etc/nixos` permissions
 
 The repository remains administratively owned by `root:wheel`. Shared NixOS configuration provides group access, setgid behavior and ACL inheritance. Do not work around permissions by recursively changing ownership to a personal user.
+
+The canonical `local/` directory is created as `root:wheel` and is not tracked by Git.
 
 ## Disk layout
 
@@ -145,7 +159,7 @@ nvtop
 
 Expected graphics are Intel UHD 770 using `i915` and Radeon RX 7600 XT using `amdgpu`.
 
-The profile can expose the restricted `nix-ssh` builder service when local `deployment.json` supplies authorized client keys. No client key or remote-builder address is part of the hardware profile itself.
+The profile can expose the restricted `nix-ssh` builder service when `local/deployment.json` supplies authorized client keys. No client key or remote-builder address is part of the hardware profile itself.
 
 ## Home Manager
 
@@ -155,10 +169,12 @@ On an installed system, Topgrade selects the local hardware profile automaticall
 
 ## Backup
 
-The backup helper is available at:
+The NixOS recovery backup helper is available at:
 
 ```bash
-sudo /etc/nixos/scripts/backup-config.sh /path/to/backup-target
+sudo /etc/nixos/scripts/backup-config.sh /path/to/external-backup-target
 ```
 
-In addition to Git-tracked configuration, remember the local `profile.nix`, `identity.json`, optional `deployment.json`, private keys, local wallpaper, local vendor assets, local ThinkPad tuning and other deliberately untracked credentials/state that require backup.
+It backs up exactly `/etc/nixos/local/`: `profile.nix`, `identity.json` and `deployment.json`. The public repository, release/update locks, downloaded Apple fonts, wallpaper, optional vendor assets and generated EasyEffects baseline are reproducible and deliberately excluded.
+
+Secure Boot keys and TPM enrollment are also not part of this backup; they are recreated during a fresh installation.
