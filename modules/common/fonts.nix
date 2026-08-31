@@ -61,6 +61,58 @@ in
       lcdfilter = "default";
     };
 
+    # "New York Medium" is a local semantic alias for Apple's New York
+    # variable family. Fontconfig pattern edits run before default weight
+    # substitution, so the Medium promotion is applied in the font-result pass
+    # instead. Both an explicit Regular request and Fontconfig's default Medium
+    # request are normalized to the wght=500 variable-font instance. Explicit
+    # Semibold/Bold requests never match these rules and retain their weight.
+    localConf = ''
+      <?xml version="1.0"?>
+      <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+      <fontconfig>
+        <match target="font">
+          <test target="pattern" qual="any" name="family" compare="eq">
+            <string>New York Medium</string>
+          </test>
+          <test target="pattern" name="weight" compare="eq">
+            <const>regular</const>
+          </test>
+          <edit name="weight" mode="assign">
+            <const>medium</const>
+          </edit>
+          <edit name="style" mode="assign">
+            <string>Medium</string>
+          </edit>
+          <edit name="fontvariations" mode="assign">
+            <string>wght=500</string>
+          </edit>
+        </match>
+
+        <match target="font">
+          <test target="pattern" qual="any" name="family" compare="eq">
+            <string>New York Medium</string>
+          </test>
+          <test target="pattern" name="weight" compare="eq">
+            <const>medium</const>
+          </test>
+          <edit name="weight" mode="assign">
+            <const>medium</const>
+          </edit>
+          <edit name="style" mode="assign">
+            <string>Medium</string>
+          </edit>
+          <edit name="fontvariations" mode="assign">
+            <string>wght=500</string>
+          </edit>
+        </match>
+      </fontconfig>
+    '';
+
+    aliases."New York Medium" = {
+      prefer = [ "New York" ];
+    };
+
     defaultFonts = lib.mkForce {
       sansSerif = [
         "SF Pro"
@@ -68,7 +120,7 @@ in
       ];
 
       serif = [
-        "New York"
+        "New York Medium"
         "Noto Serif"
       ];
 
