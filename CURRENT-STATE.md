@@ -47,7 +47,8 @@ personal usernames.
 - Lenovo ThinkPad X1 Carbon Gen 13 / Intel Lunar Lake
 - OLED 2880x1800
 - KDE Plasma 6 / Wayland
-- WWAN/GNSS support
+- WWAN/GNSS hardware support remains profile-specific
+- WWAN carrier connection name/APN are optional deployment-local data under `networking.wwan`; no provider is embedded in the hardware profile
 - runtime target disk selection; no disk serial or fixed disk ID in Git
 - local ThinkPad logo fetched from documented upstream source when available
 - local EasyEffects tuning generated from the pinned Lenovo package during installer preflight
@@ -109,6 +110,7 @@ Deployment data can supply:
 
 - user SSH authorized keys
 - local physical subnets that must outrank overlapping overlay routes
+- optional WWAN connection name/APN for the WWAN-capable ThinkPad profile
 - Nix remote-builder endpoint/key data
 - desktop integration data
 - user-level service endpoints consumed by Home Manager
@@ -121,6 +123,12 @@ prefer specific routes from the main table while suppressing that table's
 default route. This keeps directly connected LAN traffic local when a Tailscale
 subnet route overlaps the same prefix, while still allowing the Tailscale route
 to win when the workstation is away from that LAN.
+
+`networking.wwan` is optional and currently consumed only by the ThinkPad
+profile. When present it contains the deployment-specific NetworkManager
+connection name and APN. ModemManager/FCC unlock, GNSS, the RM520N-GL D3cold
+workaround and the bounded ModemManager shutdown timeout remain hardware/profile
+behavior even when no carrier connection is declared.
 
 Example Topgrade policy:
 
@@ -136,8 +144,9 @@ Example Topgrade policy:
 freezes machine-local managed dependency advancement while repository sync and
 normal activation remain enabled.
 
-No password hash, personal SSH key, deployment hostname/address or service
-endpoint belongs in the tracked hardware profiles.
+No password hash, personal SSH key, deployment hostname/address, service
+endpoint, mobile carrier connection name or APN belongs in the tracked hardware
+profiles.
 
 ## Local generated assets and fonts
 
@@ -304,6 +313,12 @@ The public repository pair starts again at `v0.1.0` rather than continuing the
 private development version sequence. Both repositories must carry the same
 release tag.
 
+The required publication order is Home Manager first and NixOS second. The
+matching Home Manager tag must already exist when the NixOS GitHub release is
+published because the NixOS release workflow immediately checks out that tag to
+build the combined installation package. `docs/release-process.md` is the
+canonical pre-release, publication and post-release checklist.
+
 The tracked `lon.lock` is the NixOS release/bootstrap dependency state. The
 `Refresh NixOS release lock` workflow can be run manually before a release and
 also checks weekly. It runs `lon update`, evaluates all three profiles against
@@ -335,11 +350,12 @@ development repositories are not used as installed-system upstreams.
 - all three NixOS profiles with canonical `local/` recovery-state fixtures
 - all three NixOS profiles again through the installer/bootstrap root fallback
 - the deployment-local overlapping-subnet policy during profile evaluation
+- the ThinkPad deployment-local WWAN connection with documentation-only carrier data
 - one real Plymouth theme build per profile
 
 Clean-checkout CI must not depend on real local identity, `.local-sources/`,
-wallpaper, vendor logos or ThinkPad tuning. CI deployment fixtures use only
-documentation-range addresses.
+wallpaper, vendor logos, ThinkPad tuning, private network ranges or a real mobile
+carrier. CI deployment fixtures use only documentation/example values.
 
 ## Topgrade
 
