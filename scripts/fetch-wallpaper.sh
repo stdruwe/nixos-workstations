@@ -17,8 +17,25 @@ for command in curl python3 mktemp mkdir mv rm; do
   }
 done
 
-if [[ -s "$TARGET_DIR/wallpaper.png" || -s "$TARGET_DIR/wallpaper.jpg" ]]; then
-  echo "Shared wallpaper is already present under $TARGET_DIR."
+existing_wallpapers=()
+for candidate in \
+  "$TARGET_DIR/wallpaper.png" \
+  "$TARGET_DIR/wallpaper.jpg" \
+  "$TARGET_DIR/wallpaper.jpeg"; do
+  if [[ -s "$candidate" ]]; then
+    existing_wallpapers+=("$candidate")
+  fi
+done
+
+if (( ${#existing_wallpapers[@]} > 1 )); then
+  echo "Multiple shared wallpapers exist under $TARGET_DIR:" >&2
+  printf '  %s\n' "${existing_wallpapers[@]}" >&2
+  echo "Keep exactly one of wallpaper.png, wallpaper.jpg or wallpaper.jpeg." >&2
+  exit 1
+fi
+
+if (( ${#existing_wallpapers[@]} == 1 )); then
+  echo "Shared wallpaper is already present: ${existing_wallpapers[0]}"
   exit 0
 fi
 
@@ -105,7 +122,10 @@ PY
 )"
 
 TARGET="$TARGET_DIR/wallpaper.$IMAGE_TYPE"
-rm -f "$TARGET_DIR/wallpaper.png" "$TARGET_DIR/wallpaper.jpg"
+rm -f \
+  "$TARGET_DIR/wallpaper.png" \
+  "$TARGET_DIR/wallpaper.jpg" \
+  "$TARGET_DIR/wallpaper.jpeg"
 mv "$PAYLOAD" "$TARGET"
 chmod 0644 "$TARGET"
 

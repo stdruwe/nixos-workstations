@@ -3,15 +3,7 @@
 let
   thinkpadLogoPath = ../../assets/local/thinkpad-logo.svg;
   thinkpadLogoAvailable = builtins.pathExists thinkpadLogoPath;
-  wallpaperPng = ../../assets/local/wallpaper.png;
-  wallpaperJpg = ../../assets/local/wallpaper.jpg;
-  wallpaperPath =
-    if builtins.pathExists wallpaperPng then
-      wallpaperPng
-    else if builtins.pathExists wallpaperJpg then
-      wallpaperJpg
-    else
-      null;
+  wallpaperPath = config.workstation.wallpaper.source;
   wallpaperAvailable = wallpaperPath != null;
   rawPlymouthHostName = config.networking.hostName;
   displayPlymouthHostName =

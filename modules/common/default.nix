@@ -4,6 +4,7 @@
   imports = [
     ./identity.nix
     ./deployment.nix
+    ./wallpaper.nix
     ./base.nix
     ./desktop.nix
     ./networking.nix
