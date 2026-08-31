@@ -3,9 +3,10 @@
 set -Eeuo pipefail
 
 CONFIG_DIR="/etc/nixos"
+LOCAL_STATE_DIR="${CONFIG_DIR}/local"
 CONFIG_FILE="${CONFIG_DIR}/configuration.nix"
-PROFILE_SELECTOR="${CONFIG_DIR}/profile.nix"
-IDENTITY_FILE="${CONFIG_DIR}/identity.json"
+PROFILE_SELECTOR="${LOCAL_STATE_DIR}/profile.nix"
+IDENTITY_FILE="${LOCAL_STATE_DIR}/identity.json"
 SECUREBOOT_MODULE="${CONFIG_DIR}/secureboot.nix"
 
 ROOT_PART_LINK="/dev/disk/by-partlabel/root-x86-64"
@@ -70,7 +71,7 @@ show_status() {
 
   echo "Local profile selector:"
   if [[ -f "$PROFILE_SELECTOR" ]]; then
-    grep -E '^[[:space:]]*\./hosts/[^/]+/(installation|default)\.nix' "$PROFILE_SELECTOR" || true
+    grep -E '^[[:space:]]*\.\./hosts/[^/]+/(installation|default)\.nix' "$PROFILE_SELECTOR" || true
   else
     echo "missing: $PROFILE_SELECTOR"
   fi
@@ -130,20 +131,20 @@ prepare_secureboot() {
   local target_profile=""
   local selector_backup=""
 
-  if grep -Fq './hosts/thinkpad-x1-carbon-gen13/installation.nix' "$PROFILE_SELECTOR"; then
-    target_profile="./hosts/thinkpad-x1-carbon-gen13/default.nix"
-  elif grep -Fq './hosts/hp-z2-tower-g9/installation.nix' "$PROFILE_SELECTOR"; then
-    target_profile="./hosts/hp-z2-tower-g9/default.nix"
-  elif grep -Fq './hosts/thinkpad-x1-carbon-gen13/default.nix' "$PROFILE_SELECTOR"; then
-    echo "Profile selector already points to ./hosts/thinkpad-x1-carbon-gen13/default.nix"
-  elif grep -Fq './hosts/hp-z2-tower-g9/default.nix' "$PROFILE_SELECTOR"; then
-    echo "Profile selector already points to ./hosts/hp-z2-tower-g9/default.nix"
+  if grep -Fq '../hosts/thinkpad-x1-carbon-gen13/installation.nix' "$PROFILE_SELECTOR"; then
+    target_profile="../hosts/thinkpad-x1-carbon-gen13/default.nix"
+  elif grep -Fq '../hosts/hp-z2-tower-g9/installation.nix' "$PROFILE_SELECTOR"; then
+    target_profile="../hosts/hp-z2-tower-g9/default.nix"
+  elif grep -Fq '../hosts/thinkpad-x1-carbon-gen13/default.nix' "$PROFILE_SELECTOR"; then
+    echo "Profile selector already points to ../hosts/thinkpad-x1-carbon-gen13/default.nix"
+  elif grep -Fq '../hosts/hp-z2-tower-g9/default.nix' "$PROFILE_SELECTOR"; then
+    echo "Profile selector already points to ../hosts/hp-z2-tower-g9/default.nix"
   else
     die "Unknown profile selector in $PROFILE_SELECTOR."
   fi
 
-  if [[ -n "$target_profile" && ! -f "${CONFIG_DIR}/${target_profile#./}" ]]; then
-    die "Normal hardware profile is missing: ${CONFIG_DIR}/${target_profile#./}"
+  if [[ -n "$target_profile" && ! -f "${CONFIG_DIR}/${target_profile#../}" ]]; then
+    die "Normal hardware profile is missing: ${CONFIG_DIR}/${target_profile#../}"
   fi
 
   echo "Secure Boot Setup Mode: OK"
@@ -306,7 +307,7 @@ Sequence after a fresh NixOS installation:
   1. First normal boot with systemd-boot
   2. sudo $0 prepare
      - creates sbctl keys if needed
-     - switches profile.nix from installation.nix to default.nix
+     - switches local/profile.nix from installation.nix to default.nix
      - builds and activates Lanzaboote
   3. sudo $0 enroll-secureboot
   4. reboot
