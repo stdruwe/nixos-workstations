@@ -28,6 +28,10 @@
           -t quectel-gnss \
           "GNSS requested - enabling RM520N-GL"
 
+        # gpsd can request GNSS before ModemManager/kernel device discovery has
+        # made the modem AT endpoint writable. Keep this bounded five-second
+        # retry window; shortening it can make the first GNSS request fail even
+        # though /dev/gnss0 already exists. See docs/operational-invariants.md.
         for _ in $(${pkgs.coreutils}/bin/seq 1 50); do
           if [ -w /dev/wwan0at0 ]; then
             printf 'AT+QGPS=1\r' > /dev/wwan0at0
@@ -56,8 +60,10 @@
     esac
   '';
 
-  # The Quectel RM5xx card sits behind this PCIe root port. Keep it usable,
-  # but prevent it from waking the laptop from s2idle.
+  # The Quectel RM5xx card sits behind this verified PCIe root port. Keep it
+  # usable during normal operation, but prevent it from waking the laptop from
+  # s2idle. The hard-coded path is model-specific and must not be generalized
+  # without rechecking the PCI topology. See docs/operational-invariants.md.
   systemd.services.disable-wwan-wakeup = {
     description = "Disable wakeup from the Quectel WWAN PCIe root port";
 
