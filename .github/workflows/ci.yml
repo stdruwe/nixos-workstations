@@ -141,7 +141,7 @@ jobs:
           # Exercise the real machine-local wallpaper path instead of only the
           # no-wallpaper fallback. This is a minimal valid 1x1 PNG.
           base64 -d > assets/local/wallpaper.png <<'EOF'
-          iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=
+          iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=
           EOF
 
       - name: Evaluate canonical NixOS system
