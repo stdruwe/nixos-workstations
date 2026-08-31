@@ -100,6 +100,17 @@ jobs:
           }
           EOF
 
+          cat > deployment.json <<'EOF'
+          {
+            "networking": {
+              "localSubnets": [
+                "192.0.2.0/24",
+                "2001:db8:1234::/64"
+              ]
+            }
+          }
+          EOF
+
           cat > profile.nix <<'EOF'
           { ... }:
 
