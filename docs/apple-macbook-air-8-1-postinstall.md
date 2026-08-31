@@ -1,6 +1,6 @@
 # MacBookAir8,1 (2018/T2) – post-install and runtime findings
 
-Last updated: 2026-08-30
+Last updated: 2026-08-31
 
 This document records verified runtime findings for the technical profile `apple-macbook-air-8-1`. Experimental changes should only be recorded here after they have been reproduced and confirmed.
 
@@ -14,11 +14,12 @@ This document records verified runtime findings for the technical profile `apple
 
 Use `sudo nixos-rebuild switch` for persistent configuration activation. Calling `switch-to-configuration` directly can activate a store path without advancing the persistent system generation in the expected way.
 
-## Plymouth
+## Plymouth and shared wallpaper
 
 The MacBook profile uses a dedicated Apple-to-LUKS Plymouth theme:
 
-- shared wallpaper cropped to 2560×1600 (16:10);
+- the shared machine-local wallpaper is cropped to 2560×1600 (16:10);
+- the same source is also used for the COSMIC desktop/lock screen and COSMIC greeter;
 - the Apple boot logo is machine-local and is not stored in Git;
 - `scripts/stage-apple-boot-assets-macos.sh` stages the machine's own macOS `appleLogo.efires` resource on the Apple EFI partition;
 - `scripts/import-apple-boot-logo-linux.sh` extracts the 168×206 2x logo locally to ignored `assets/local/apple-logo-2x.png`;
@@ -31,13 +32,13 @@ The logo extraction/fallback workflow and the boot transition were both verified
 
 ## T2 NCM / NetworkManager
 
-The internal T2 USB-NCM interface is not a usable external Ethernet port. Verified hardware MAC address:
+T2 Macs expose an internal USB Ethernet/NCM interface that is not a usable external Ethernet port. The t2linux post-install documentation identifies the well-known interface address used by this hardware path:
 
 ```text
 ac:de:48:00:11:22
 ```
 
-The robust workaround is NetworkManager `no-auto-default` by MAC address, independent of the kernel interface name.
+This is a T2 platform constant used by the upstream workaround, not a deployment-specific workstation identifier. The profile uses it for NetworkManager `no-auto-default`, which is independent of the kernel interface name and avoids recurrent wired-network notifications.
 
 ## BCM4355 WLAN / IPv6 receive performance
 
@@ -153,6 +154,7 @@ Current integration state:
 - Topgrade validates managed dependency candidates only against the current machine's NixOS and Home Manager profiles;
 - there is no publisher profile, automatic dependency commit/push workflow, cross-machine update transaction or cross-profile dependency validation in normal Topgrade operation;
 - Home Manager uses tracked `flake.lock.bootstrap` only as bootstrap state and keeps the live `flake.lock` machine-local and ignored;
+- manual Home Manager builds/switches use explicit `path:.#<profile>` references;
 - the NixOS system update is guarded by a full current-profile candidate build before the installed `nixos-unstable` channel is changed;
 - on a failed candidate, the installed channel remains unchanged while Home Manager, Flatpak and the remaining Topgrade steps continue;
 - repository-wide sudo authentication timeout is 15 minutes.

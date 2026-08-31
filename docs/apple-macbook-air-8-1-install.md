@@ -1,6 +1,6 @@
 # MacBookAir8,1 (2018/T2) – NixOS dual-boot installation
 
-Last updated: 2026-08-30
+Last updated: 2026-08-31
 
 This guide describes installing NixOS on the verified Apple MacBookAir8,1 (2018, T2) while retaining the existing macOS installation. The technical profile name is `apple-macbook-air-8-1`; hostname and username are chosen locally during installation.
 
@@ -143,9 +143,9 @@ Do not use the embedded ISO snapshot as the target package set, and do not confu
 
 ## Shared wallpaper
 
-The desktop/Plymouth wallpaper is not shipped in the repository or installation archive. During non-destructive preflight, the shared installer helper resolves KDE Store content `1189184` through the OCS API and stores the downloaded image only below ignored `assets/local/`.
+The wallpaper is not shipped in the repository or installation archive. During non-destructive preflight, the shared installer helper resolves KDE Store content `1189184` through the OCS API and stores exactly one canonical image below ignored `assets/local/` as `wallpaper.png`, `wallpaper.jpg` or `wallpaper.jpeg`.
 
-The MacBook Plymouth build crops that local source proportionally to 2560×1600. A clean checkout without the local wallpaper remains buildable and uses a black Plymouth fallback.
+That same machine-local image is the source for the MacBook Plymouth background, COSMIC desktop/lock screen and COSMIC greeter. The Plymouth build crops it proportionally to 2560×1600. A clean checkout without the local wallpaper remains buildable and uses a black Plymouth fallback.
 
 ## Apple fonts
 
@@ -156,6 +156,8 @@ No Apple font archive is shipped in the repository or installation package. The 
 - `NY.dmg` (New York)
 
 The local source under `fonts/apple/` is replaced only after all three families have been extracted and verified successfully. On an installed system the same process can be repeated with `/etc/nixos/scripts/update-apple-fonts.sh`.
+
+System-wide defaults are SF Pro for sans-serif, SF Mono for monospace and New York at Medium weight (`wght=500`) for normal serif requests. The `New York Medium` semantic Fontconfig alias is owned by NixOS; COSMIC has no separate native serif setting and therefore inherits that system mapping.
 
 ## Apple logo / Plymouth
 
