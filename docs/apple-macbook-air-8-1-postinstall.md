@@ -132,7 +132,7 @@ Do not disable Thunderbolt globally or force ASPM based on the current measureme
 
 ## Nix remote builder
 
-The MacBook hardware profile does not embed a remote-builder address, SSH host key or deployment-specific hostname. Optional `ssh-ng` offloading is supplied through ignored local `deployment.json`; without it, local builds remain enabled and the profile still evaluates/builds normally.
+The MacBook hardware profile does not embed a remote-builder address, SSH host key or deployment-specific hostname. Optional `ssh-ng` offloading is supplied through `/etc/nixos/local/deployment.json`; without it, local builds remain enabled and the profile still evaluates/builds normally.
 
 A local deployment may configure:
 
@@ -143,6 +143,10 @@ A local deployment may configure:
 - capacity/scheduling values such as `maxJobs` and `speedFactor`.
 
 The private client key remains outside Git and the Nix store. The optional remote-builder path has been validated with a real T2 kernel build and can be used for expensive x86_64 builds while preserving local-build fallback.
+
+## Local recovery state
+
+The canonical NixOS recovery state is `/etc/nixos/local/` and consists of exactly `profile.nix`, `identity.json` and `deployment.json`. The MacBook uses the same recovery model as the other profiles. Reproducible wallpaper/font/logo assets and `.local-sources/` are not part of that backup set.
 
 ## Update / Home Manager state
 
