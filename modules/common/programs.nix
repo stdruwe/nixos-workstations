@@ -60,7 +60,7 @@ in
           install_url = "https://addons.mozilla.org/firefox/downloads/latest/bitwarden-password-manager/latest.xpi";
           installation_mode = "force_installed";
         };
-        "gesturefy@robbedebiene.de" = {
+        "gesturefy@robbendebiene.de" = {
           install_url = "https://addons.mozilla.org/firefox/downloads/latest/gesturefy/latest.xpi";
           installation_mode = "normal_installed";
         };
