@@ -44,6 +44,25 @@ in
       htop
       btopPackage
       fastfetch
+
+      # General command-line and file-management tools.
+      jq
+      yq-go
+      ripgrep
+      fd
+      bat
+      eza
+      tree
+      rsync
+      rclone
+      pv
+      git-lfs
+
+      # Nix/NixOS inspection tools.
+      nvd
+      nix-tree
+      nix-diff
+
       pciutils
       usbutils
       ethtool
