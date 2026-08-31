@@ -88,6 +88,18 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
+      - name: Configure Cachix for T2 builds
+        if: matrix.profile == 'apple-macbook-air-8-1'
+        uses: cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71 # v17
+        with:
+          name: nixos-workstation
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+
+      - name: Report Cachix public configuration
+        if: matrix.profile == 'apple-macbook-air-8-1'
+        run: |
+          nix config show | grep -E '^(substituters|trusted-public-keys) ='
+
       - name: Prepare canonical local inputs
         run: |
           mkdir -p fonts/apple assets/local local
@@ -159,6 +171,18 @@ jobs:
             --no-out-link \
             -I nixos-config="$PWD/configuration.nix" \
             >/dev/null
+
+      - name: Build and cache full T2 NixOS system
+        if: matrix.profile == 'apple-macbook-air-8-1'
+        run: |
+          system_path="$(
+            nix-build '<nixpkgs/nixos>' \
+              -A system \
+              --no-out-link \
+              -I nixos-config="$PWD/configuration.nix"
+          )"
+
+          printf 'Built T2 NixOS system: %s\n' "$system_path"
 
       - name: Evaluate installer bootstrap fallback
         run: |
