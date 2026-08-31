@@ -1,16 +1,23 @@
 { config, lib, ... }:
 
 let
-  identityFile = ../../identity.json;
+  localIdentityFile = ../../local/identity.json;
+  bootstrapIdentityFile = ../../identity.json;
+  identityFile =
+    if builtins.pathExists localIdentityFile then
+      localIdentityFile
+    else
+      bootstrapIdentityFile;
   identity =
     if builtins.pathExists identityFile then
       builtins.fromJSON (builtins.readFile identityFile)
     else
       throw ''
-        Local identity is missing: /etc/nixos/identity.json
+        Local identity is missing: /etc/nixos/local/identity.json
 
-        This file is intentionally not versioned and must contain at least
-        hostName, userName and fullName.
+        During installation only, /etc/nixos/identity.json is accepted as a
+        bootstrap input and is migrated into local/ during activation.
+        The identity must contain at least hostName, userName and fullName.
       '';
 in
 {
@@ -27,19 +34,19 @@ in
     hostName = lib.mkOption {
       type = lib.types.str;
       readOnly = true;
-      description = "Local hostname from identity.json.";
+      description = "Local hostname from local/identity.json.";
     };
 
     userName = lib.mkOption {
       type = lib.types.str;
       readOnly = true;
-      description = "Local administrative user from identity.json.";
+      description = "Local administrative user from local/identity.json.";
     };
 
     fullName = lib.mkOption {
       type = lib.types.str;
       readOnly = true;
-      description = "Display name of the local user from identity.json.";
+      description = "Display name of the local user from local/identity.json.";
     };
 
     homeDirectory = lib.mkOption {
@@ -60,15 +67,15 @@ in
     assertions = [
       {
         assertion = builtins.match "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$" config.workstation.hostName != null;
-        message = "identity.json does not contain a valid hostname.";
+        message = "local/identity.json does not contain a valid hostname.";
       }
       {
         assertion = builtins.match "^[a-z_][a-z0-9_-]{0,30}$" config.workstation.userName != null;
-        message = "identity.json does not contain a valid local username.";
+        message = "local/identity.json does not contain a valid local username.";
       }
       {
         assertion = config.workstation.fullName != "";
-        message = "identity.json does not contain a full display name.";
+        message = "local/identity.json does not contain a full display name.";
       }
     ];
 

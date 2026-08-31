@@ -1,9 +1,11 @@
 # Local deployment configuration
 
-`/etc/nixos/deployment.json` contains optional machine- or site-specific values
-that must not be embedded in the public hardware profiles. The file is ignored
-by Git. A clean checkout remains evaluable without it; every documented key is
-optional unless a subsection is present and says otherwise.
+`/etc/nixos/local/deployment.json` contains optional machine- or site-specific
+values that must not be embedded in the public hardware profiles. The complete
+`/etc/nixos/local/` directory is ignored by Git. A clean checkout remains
+evaluable without deployment-specific values during the installer bootstrap;
+after activation an empty deployment is represented by `{}`. Every documented
+key is optional unless a subsection is present and says otherwise.
 
 This document is the canonical reference for the deployment keys consumed by
 the NixOS and matching Home Manager repositories.
@@ -11,8 +13,8 @@ the NixOS and matching Home Manager repositories.
 ## General rules
 
 - The file must contain one JSON object.
-- Keep hardware identity in `profile.nix` and user/machine identity in
-  `identity.json`; do not duplicate those values here.
+- Keep hardware identity in `local/profile.nix` and user/machine identity in
+  `local/identity.json`; do not duplicate those values here.
 - Public SSH keys and internal service addresses are valid deployment data, but
   they still reveal infrastructure details. Keep the file out of the public
   repository.
@@ -294,11 +296,14 @@ not disable the NixOS candidate safety build.
 
 ## Backup and recovery
 
-`deployment.json` is one of the small pieces of local state that should be
-preserved when the goal is to reproduce a workstation's deployment-specific
-configuration. Release/bootstrap lock files do not belong in that recovery set:
-they are refreshed by the repository maintenance workflow and subsequently by
-Topgrade on installed systems.
+`local/deployment.json` is one of exactly three canonical NixOS recovery files,
+alongside `local/profile.nix` and `local/identity.json`. The helper
+`scripts/backup-config.sh` archives `/etc/nixos/local/` as one unit.
+
+Release/bootstrap lock files do not belong in that recovery set: they are
+refreshed by repository maintenance and subsequently by Topgrade on installed
+systems. Downloaded fonts, wallpaper and other reproducible generated state are
+also intentionally excluded.
 
 The long-term documentation source remains this repository. A GitHub Wiki may
 mirror selected files later, but the Markdown under `docs/` remains canonical.

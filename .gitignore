@@ -15,10 +15,13 @@ secrets/
 /.local-sources/
 /result
 
-# Local system identity, profile and deployment data
+# Canonical machine-local recovery state
+/local/
+
+# Installer/bootstrap compatibility paths; activation migrates these into local/
 /profile.nix
 /identity.json
 /deployment.json
 
-# Legacy local host selector kept ignored during migration
+# Legacy pre-profile host selector
 /host.nix

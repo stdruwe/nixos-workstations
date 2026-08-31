@@ -88,11 +88,11 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - name: Prepare local-only inputs
+      - name: Prepare canonical local inputs
         run: |
-          mkdir -p fonts/apple assets/local
+          mkdir -p fonts/apple assets/local local
 
-          cat > identity.json <<'EOF'
+          cat > local/identity.json <<'EOF'
           {
             "hostName": "ci-host",
             "userName": "ciuser",
@@ -100,7 +100,7 @@ jobs:
           }
           EOF
 
-          cat > deployment.json <<'EOF'
+          cat > local/deployment.json <<'EOF'
           {
             "networking": {
               "localSubnets": [
@@ -110,6 +110,35 @@ jobs:
             }
           }
           EOF
+
+          cat > local/profile.nix <<'EOF'
+          { ... }:
+
+          {
+            imports = [
+              ../hosts/${{ matrix.profile }}/default.nix
+            ];
+          }
+          EOF
+
+          # Exercise the real machine-local wallpaper path instead of only the
+          # no-wallpaper fallback. This is a minimal valid 1x1 PNG.
+          base64 -d > assets/local/wallpaper.png <<'EOF'
+          iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=
+          EOF
+
+      - name: Evaluate canonical NixOS system
+        run: |
+          nix-instantiate '<nixpkgs/nixos>' \
+            -A system \
+            -I nixos-config="$PWD/configuration.nix" \
+            >/dev/null
+
+      - name: Evaluate installer bootstrap fallback
+        run: |
+          mv local local.canonical
+          cp local.canonical/identity.json identity.json
+          cp local.canonical/deployment.json deployment.json
 
           cat > profile.nix <<'EOF'
           { ... }:
@@ -121,18 +150,13 @@ jobs:
           }
           EOF
 
-          # Exercise the real machine-local wallpaper path instead of only the
-          # no-wallpaper fallback. This is a minimal valid 1x1 PNG.
-          base64 -d > assets/local/wallpaper.png <<'EOF'
-          iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=
-          EOF
-
-      - name: Evaluate NixOS system
-        run: |
           nix-instantiate '<nixpkgs/nixos>' \
             -A system \
             -I nixos-config="$PWD/configuration.nix" \
             >/dev/null
+
+          rm -f profile.nix identity.json deployment.json
+          mv local.canonical local
 
       - name: Build Plymouth theme package
         run: |

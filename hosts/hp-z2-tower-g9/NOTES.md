@@ -1,6 +1,6 @@
 # Hardware status – `hp-z2-tower-g9`
 
-Last updated: 2026-08-29
+Last updated: 2026-08-31
 
 ## Verified hardware
 
@@ -33,4 +33,4 @@ Last updated: 2026-08-29
 
 Other disks and optical drives may be present in the machine. They are not identified by serial number in this repository and are not Disko targets unless the installer operator explicitly selects one as the installation target.
 
-Hostname and username do not belong in this hardware document. Local identity is defined only through untracked `identity.json`.
+Hostname and username do not belong in this hardware document. Canonical local identity is defined only through `/etc/nixos/local/identity.json`.

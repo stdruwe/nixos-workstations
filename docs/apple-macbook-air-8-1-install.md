@@ -141,6 +141,20 @@ The MacBook installer therefore updates `nixos-unstable` and explicitly passes t
 
 Do not use the embedded ISO snapshot as the target package set, and do not confuse `nixos-unstable` with nixpkgs `master`.
 
+## Machine-local recovery state
+
+The installed system keeps exactly three canonical recovery files under ignored `/etc/nixos/local/`:
+
+```text
+/etc/nixos/local/profile.nix
+/etc/nixos/local/identity.json
+/etc/nixos/local/deployment.json
+```
+
+The installer initially creates historical root-level bootstrap files because NixOS must evaluate the target before activation. `modules/common/local-state.nix` migrates that bootstrap state into `local/` during the first activation and rewrites the profile import from `./hosts/...` to `../hosts/...`.
+
+Downloaded fonts, wallpaper, the optional Apple logo, managed dependency pins and other reproducible state are deliberately not part of this recovery set. `scripts/backup-config.sh` therefore archives only `/etc/nixos/local/`.
+
 ## Shared wallpaper
 
 The wallpaper is not shipped in the repository or installation archive. During non-destructive preflight, the shared installer helper resolves KDE Store content `1189184` through the OCS API and stores exactly one canonical image below ignored `assets/local/` as `wallpaper.png`, `wallpaper.jpg` or `wallpaper.jpeg`.
@@ -203,7 +217,7 @@ The installer:
 6. asks for hostname, username and full name;
 7. downloads the shared wallpaper from KDE Store;
 8. downloads SF Pro, SF Mono and New York directly from Apple;
-9. creates local `profile.nix` and `identity.json`;
+9. creates root-level profile/identity bootstrap inputs for target evaluation;
 10. evaluates NixOS and the selected Home Manager profile;
 11. revalidates protected p1/p2 and requires the exact destructive confirmation for p3/p4;
 12. asks for the new LUKS recovery passphrase twice;
@@ -213,15 +227,16 @@ The installer:
 16. sets a fresh local user password;
 17. prepares Home Manager and its activation package in the target system;
 18. records the one-shot Home Manager activation for the first boot;
-19. configures `/etc/nixos` as `root:wheel` with administrative group access.
+19. migrates the bootstrap selector/identity/deployment state into `/etc/nixos/local/` during target activation;
+20. configures `/etc/nixos` as `root:wheel` with administrative group access.
 
 All network-dependent wallpaper/font preparation occurs before destructive confirmation.
 
 ## User and SSH
 
-The user is created from local `identity.json`. Hostname and username are not part of the technical profile name.
+The user is created from the locally entered identity that becomes `/etc/nixos/local/identity.json`. Hostname and username are not part of the technical profile name.
 
-There is no committed password hash or personal SSH public key. Optional user SSH authorized keys are read from the ignored local `deployment.json` field `userAuthorizedKeys`; private keys and agent sockets remain outside the repository.
+There is no committed password hash or personal SSH public key. Optional user SSH authorized keys are read from `/etc/nixos/local/deployment.json` field `userAuthorizedKeys`; private keys and agent sockets remain outside the repository.
 
 ## Bootloader
 
@@ -245,8 +260,9 @@ findmnt /swap
 swapon --show
 lsblk -o NAME,SIZE,TYPE,FSTYPE,PARTUUID,PARTTYPE,PARTLABEL,MOUNTPOINTS
 bootctl status
-cat /etc/nixos/profile.nix
-cat /etc/nixos/identity.json
+cat /etc/nixos/local/profile.nix
+cat /etc/nixos/local/identity.json
+cat /etc/nixos/local/deployment.json
 ```
 
 After successful initial Home Manager activation, `/var/lib/nixos/home-manager-initial-activation` must no longer exist.

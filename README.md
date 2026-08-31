@@ -11,18 +11,21 @@ Manager installation workflow.
 - `apple-macbook-air-8-1` — Apple MacBookAir8,1 (2018/T2), Intel Core i5-8210Y, Intel UHD Graphics 617, COSMIC / Wayland.
 
 Hardware profile, hostname, username and deployment-specific infrastructure are
-independent. Ignored `profile.nix` selects only the technical hardware profile,
-ignored `identity.json` supplies machine/user identity, and optional ignored
-`deployment.json` supplies local infrastructure such as SSH authorized keys,
-remote-builder data, desktop integration endpoints and Topgrade policy.
+independent. Canonical machine-local state lives below ignored `local/`:
+`local/profile.nix` selects only the technical hardware profile,
+`local/identity.json` supplies machine/user identity, and
+`local/deployment.json` supplies optional local infrastructure such as SSH
+authorized keys, remote-builder data, desktop integration endpoints and
+Topgrade policy.
 
 ## Repository layout
 
 ```text
 configuration.nix              # hardware/identity-neutral entry point
-profile.nix                    # local, ignored hardware selector
-identity.json                  # local, ignored hostname/user identity
-deployment.json                # optional, ignored deployment infrastructure
+local/                          # ignored canonical machine-local recovery state
+├── profile.nix                 # technical hardware selector
+├── identity.json               # hostname/user identity
+└── deployment.json             # deployment-specific infrastructure or {}
 lon.nix / lon.lock             # tracked bootstrap external-source state
 .local-sources/                # ignored machine-local Topgrade source state
 
@@ -108,7 +111,7 @@ sudo ./install.sh apple-macbook-air-8-1 --layout-check
 Before destructive disk confirmation the installer:
 
 - validates the supplied Home Manager bundle and selected Home Manager profile;
-- writes ignored local `identity.json` and `profile.nix` into the working copy;
+- writes temporary ignored root-level `identity.json` and `profile.nix` bootstrap inputs into the working copy;
 - downloads the shared wallpaper from its documented KDE Store source;
 - downloads and extracts SF Pro, SF Mono and New York from Apple's Developer CDN;
 - on the ThinkPad, downloads the pinned Lenovo audio package, extracts the matching tuning XML and generates all local EasyEffects presets/IRS files;
@@ -116,7 +119,10 @@ Before destructive disk confirmation the installer:
 - performs a Disko dry run where applicable.
 
 A failure in these preparation steps therefore occurs before the installer is
-allowed to erase a disk.
+allowed to erase a disk. During the first NixOS activation,
+`modules/common/local-state.nix` converts the temporary bootstrap inputs into
+the canonical `/etc/nixos/local/` layout and creates an empty
+`local/deployment.json` when no deployment-specific data exists.
 
 ## Home Manager before first graphical login
 
@@ -195,8 +201,8 @@ autoload rule that would reference a missing IRS file.
 
 ## Optional local deployment infrastructure
 
-`deployment.json` is optional and ignored. Hardware profiles remain buildable
-without it.
+`local/deployment.json` is part of the canonical local-state directory. It
+contains `{}` when no deployment-specific settings are required.
 
 It can provide personal user SSH authorized keys, Nix builder data, local
 display layout information, desktop integration data and user-level service
@@ -222,7 +228,8 @@ endpoints consumed by Home Manager. Example:
 
 Personal SSH keys, addresses, SSH host keys, builder authorization keys, service
 endpoints and display identities therefore do not need to be embedded in the
-hardware profiles.
+hardware profiles. See [`docs/deployment-json.md`](docs/deployment-json.md) for
+the complete schema.
 
 ## Fonts
 
@@ -254,7 +261,7 @@ Topgrade is the central manual update path.
 - before advancing the root channel, the current profile is fully built against the current `nixos-unstable` candidate;
 - if that candidate fails, Topgrade reports `NixOS system update: SKIPPED`, leaves the installed channel/system unchanged, exposes the build failure/log and continues the remaining update steps;
 - after a successful channel update, the installed channel is built again before activation; a failed second check rolls the channel back;
-- `deployment.json` can set `topgrade.updateManagedDependencies = false` without disabling the NixOS candidate safety build;
+- `local/deployment.json` can set `topgrade.updateManagedDependencies = false` without disabling the NixOS candidate safety build;
 - `nixos-needsreboot --dry-run` reports whether reboot is required; reboot is never automatic.
 
 This model allows a public-repository consumer to update without write access to
@@ -272,21 +279,37 @@ helper, Python syntax validation for the EFIRES helper, actionlint validation,
 NixOS evaluation of all three profiles, and a real build of every profile's
 Plymouth theme package.
 
-CI deliberately tests the tracked bootstrap/fallback state, proving a clean
-checkout does not require machine-local `.local-sources/`, `deployment.json`,
-wallpaper, vendor logos or ThinkPad tuning.
+CI evaluates both the canonical `local/` layout and the temporary installer
+bootstrap fallback, including deployment-routing documentation networks. Clean
+checkout evaluation does not require machine-local `.local-sources/`, wallpaper,
+vendor logos or ThinkPad tuning.
 
 `.github/workflows/release-install-package.yml` checks out the matching tag from
 the public Home Manager repository and builds the combined installation archive.
 No cross-repository read secret is required for public releases.
 
-## Local/non-Git data
+## Recovery state
 
-The following are intentionally machine-local and ignored:
+The dedicated NixOS recovery state is exactly:
 
-- `profile.nix`
-- `identity.json`
-- optional `deployment.json`
+```text
+/etc/nixos/local/profile.nix
+/etc/nixos/local/identity.json
+/etc/nixos/local/deployment.json
+```
+
+Use `scripts/backup-config.sh` to archive those three files to an external
+filesystem. The public Git checkout, release/bootstrap locks, Home Manager live
+lock, fonts, wallpaper and reproducible generated tuning are not duplicated in
+the recovery archive. Secure Boot keys and TPM enrollment are recreated during
+a fresh installation.
+
+## Other local/non-Git data
+
+The following are also intentionally machine-local and ignored, but are not
+part of the NixOS recovery archive because they are reproducible, independently
+backed up, or runtime state:
+
 - `.local-sources/`
 - `fonts/apple/`
 - `assets/local/` including wallpaper and optional vendor logos
