@@ -127,6 +127,11 @@ let
   '';
 in
 {
+  # Watchdogs are intentionally disabled on the ThinkPad and HP profiles. The
+  # NMI setting originated during earlier Lunar Lake/graphics hand-off
+  # diagnostics and was retained as a deliberate workstation policy rather
+  # than as a current kernel requirement. See docs/operational-invariants.md
+  # before re-enabling any watchdog path.
   boot.kernelParams = [
     "nmi_watchdog=0"
     "quiet"
@@ -138,6 +143,10 @@ in
   boot.initrd.verbose = false;
   boot.consoleLogLevel = 3;
 
+  # Keep systemd from arming runtime/reboot/kexec watchdog timers. This is the
+  # userspace half of the shared no-watchdog policy above; re-enable and test
+  # each watchdog mechanism deliberately rather than removing these values as
+  # apparent redundancy.
   systemd.settings.Manager = {
     RuntimeWatchdogSec = "off";
     RebootWatchdogSec = "off";
@@ -195,6 +204,10 @@ in
     };
   };
 
+  # PowerTOP suggests a one-second HDA timeout, but that is intentionally more
+  # aggressive than this tested setup. Ten seconds still allows the codec to
+  # power down while avoiding needless one-second power cycling; it was kept
+  # after reboot without observed audio regressions. See the invariant doc.
   boot.extraModprobeConfig = ''
     options snd_hda_intel power_save=10
   '';
