@@ -1,6 +1,6 @@
 # Combined NixOS / Home Manager installation package
 
-Last updated: 2026-08-30
+Last updated: 2026-08-31
 
 Fresh installations should normally use one transportable package containing a clean NixOS checkout, including Git metadata, plus the matching state of the Home Manager repository as a local Git bundle.
 
@@ -21,6 +21,10 @@ The public version history starts at `v0.1.0`. The same release tag must exist i
 NixOS:        v0.1.0
 Home Manager: v0.1.0
 ```
+
+Release publication has a required order: **publish Home Manager first, then publish NixOS with the identical tag**. Publishing the NixOS GitHub release immediately triggers the install-package workflow, which checks out the matching Home Manager tag. If that tag does not already exist, the packaging job fails.
+
+The complete pre-release, publication and post-release checklist is canonical in [`release-process.md`](release-process.md). In particular, run and settle both release-lock refresh workflows and their follow-up CI before creating either release tag.
 
 The release workflow checks out both public tags and invokes the package helper in release mode:
 
@@ -46,6 +50,8 @@ For Home Manager releases using the machine-local dependency model, tracked `fla
 Both repositories are public. The NixOS release workflow checks out the matching Home Manager tag directly through public HTTPS access and therefore requires no cross-repository read token or repository secret.
 
 The normal NixOS workflow `GITHUB_TOKEN` is used only to attach the generated assets to the NixOS release. If the matching Home Manager tag is missing or either checkout does not resolve exactly to the requested tag, the release job fails and does not publish an installation package.
+
+Published release tags are treated as immutable. Do not move an existing tag to repair a bad release snapshot; correct the repositories and publish a new semantic-version release instead.
 
 ## Creating a manual package from `main`
 

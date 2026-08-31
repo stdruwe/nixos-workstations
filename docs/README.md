@@ -8,8 +8,9 @@ The Markdown files in this directory are the canonical long-form documentation f
 - [`operational-invariants.md`](operational-invariants.md) — non-obvious hardware workarounds, fixed delays, service ordering, cross-repository dependencies, and the tests/removal criteria required before changing them.
 - [`deployment-json.md`](deployment-json.md) — canonical schema and behavior for `/etc/nixos/local/deployment.json`.
 
-## Installation and recovery
+## Installation, release and recovery
 
+- [`release-process.md`](release-process.md) — canonical paired-release checklist, including the required Home Manager first / NixOS second publication order and post-release artifact verification.
 - [`install-package.md`](install-package.md) — version-matched public installation package and release workflow.
 - [`home-manager-install-bundle.md`](home-manager-install-bundle.md) — Home Manager bundle integration during NixOS installation.
 - [`secure-boot-tpm2.md`](secure-boot-tpm2.md) — Secure Boot and TPM2 post-install procedure.
