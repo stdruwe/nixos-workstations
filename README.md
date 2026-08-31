@@ -147,19 +147,33 @@ partitions are never deleted automatically.
 See [`docs/apple-macbook-air-8-1-install.md`](docs/apple-macbook-air-8-1-install.md)
 and [`docs/apple-macbook-air-8-1-postinstall.md`](docs/apple-macbook-air-8-1-postinstall.md).
 
-## Wallpaper and Plymouth assets
+## Shared wallpaper and Plymouth assets
 
 The shared wallpaper is not stored in Git. `scripts/fetch-wallpaper.sh` resolves
-KDE Store content `1189184` through the OCS API and stores the downloaded image
-under ignored `assets/local/`.
+KDE Store content `1189184` through the OCS API and stores exactly one canonical
+machine-local image under ignored `assets/local/`:
 
+```text
+wallpaper.png
+wallpaper.jpg
+wallpaper.jpeg
+```
+
+Having more than one of these files at the same time is a configuration error.
 Installation fetches the image before the first NixOS build. A best-effort
-systemd service can restore a missing local copy later. Clean checkouts remain
-buildable without it and use a black Plymouth fallback.
+systemd service can restore a missing local copy later, while clean checkouts
+remain buildable without it and use a black Plymouth fallback.
 
-The ThinkPad, HP and Apple Plymouth backgrounds are generated during the Nix
-build from the same local wallpaper at the profile's required aspect ratio and
-resolution. Vendor logos are also local-only and optional. See
+The selected local image is the single background source for Plymouth, Plasma
+desktop, Plasma lock screen, Plasma Login Manager, COSMIC desktop/lock screen
+and the COSMIC greeter. Plasma re-applies it during NixOS activation and at
+login. The Plasma Login Manager receives a native KConfig drop-in at
+`/etc/plasmalogin.conf.d/zz-nixos-wallpaper.conf` so nested KDE groups are not
+escaped by a generic INI renderer.
+
+ThinkPad, HP and Apple Plymouth backgrounds are generated during the Nix build
+from the same selected local wallpaper at each profile's required aspect ratio
+and resolution. Vendor logos are local-only and optional. See
 [`docs/third-party-material.md`](docs/third-party-material.md).
 
 ## ThinkPad audio profiles
@@ -215,8 +229,13 @@ hardware profiles.
 All three systems use the same Apple font defaults:
 
 - sans-serif: SF Pro
-- serif: New York
 - monospace: SF Mono
+- serif: New York at Medium weight (`wght=500`)
+
+`New York Medium` is a local semantic Fontconfig alias for Apple's `New York`
+variable family. Normal serif requests resolve to that Medium instance while
+explicit stronger weights remain stronger. Firefox, Zen Browser and Thunderbird
+use the same SF Pro / New York Medium / SF Mono generic defaults.
 
 The font files are not stored in Git. Installation and
 `scripts/update-apple-fonts.sh` retrieve SF Pro, SF Mono and New York directly

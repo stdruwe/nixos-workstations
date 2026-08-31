@@ -1,6 +1,6 @@
 # Current State
 
-Last updated: 2026-08-30
+Last updated: 2026-08-31
 
 This file is the durable operational baseline for the NixOS repository. Read it
 before persistent changes. Keep transient debugging experiments out of this
@@ -21,7 +21,7 @@ file.
 - ignored `.local-sources/` contains machine-local managed source state
 
 Hardware profile, hostname, username and deployment infrastructure are
-independent. Documentation and tracked code must use technical profile names or
+independent. Documentation and tracked code use technical profile names or
 hardware classes rather than deployment-specific hostnames, addresses or
 personal usernames.
 
@@ -48,7 +48,8 @@ personal usernames.
 - Intel UHD Graphics 770 + Radeon RX 7600 XT
 - KDE Plasma 6 / Wayland
 - runtime target disk selection; no disk serial or fixed disk ID in Git
-- ESPHome Device Builder / remote-build worker remains profile-specific
+- fixed 96 kHz PipeWire graph for the profile
+- ESPHome Device Builder remote-build worker remains profile-specific
 - optional builder authorization comes only from local `deployment.json`
 - HP Plymouth logo is optional machine-local data
 
@@ -110,13 +111,36 @@ The following are intentionally ignored and machine-local:
 ### Shared wallpaper
 
 The wallpaper is not stored in Git. `scripts/fetch-wallpaper.sh` resolves KDE
-Store content `1189184` through the OCS API and stores PNG/JPEG data under
-ignored `assets/local/`.
+Store content `1189184` through the OCS API. Exactly one of these canonical
+machine-local files may exist under ignored `assets/local/`:
+
+```text
+wallpaper.png
+wallpaper.jpg
+wallpaper.jpeg
+```
+
+Multiple variants are rejected as a configuration error. Zero variants remain
+valid for a clean checkout so CI and fallback builds do not require third-party
+local data.
 
 Fresh installers fetch the wallpaper during non-destructive preflight. A
-best-effort systemd repair service restores a missing local copy later. Plasma
-uses the local image as its initial wallpaper. Plymouth builds generate their
-profile-specific backgrounds from the same local source:
+best-effort systemd repair service can restore a missing local copy later. The
+selected source is shared by:
+
+- Plymouth
+- Plasma desktop
+- Plasma lock screen
+- Plasma Login Manager
+- COSMIC desktop and lock screen
+- COSMIC greeter
+
+Plasma synchronizes the selected wallpaper during NixOS activation and again at
+login. Plasma Login Manager receives the native KConfig drop-in
+`/etc/plasmalogin.conf.d/zz-nixos-wallpaper.conf`; nested KDE KConfig groups are
+not rendered through the generic Nix INI formatter.
+
+Plymouth derives profile-specific backgrounds from the same source:
 
 - ThinkPad: 2880x1800
 - HP: 1920x1080
@@ -127,14 +151,19 @@ fallback.
 
 ### Apple fonts
 
-All three profiles use:
+All three profiles use the same system font policy:
 
 - SF Pro as sans-serif
-- New York as serif
 - SF Mono as monospace
+- New York at Medium weight (`wght=500`) as normal serif
 
-Installation and `scripts/update-apple-fonts.sh` obtain these from Apple's
-Developer CDN. Font binaries are never stored in Git.
+`New York Medium` is a semantic Fontconfig alias backed by Apple's New York
+variable family. Normal serif requests are promoted to the Medium instance;
+explicit stronger weights are not flattened to Medium. Firefox, Zen Browser and
+Thunderbird use the same SF Pro / New York Medium / SF Mono generic defaults.
+
+Installation and `scripts/update-apple-fonts.sh` obtain SF Pro, SF Mono and New
+York from Apple's Developer CDN. Font binaries are never stored in Git.
 
 ## ThinkPad EasyEffects model
 
@@ -180,13 +209,16 @@ and builds the activation closure directly into the target Nix store.
 `modules/common/home-manager-initial.nix` activates that prepared configuration
 before the first graphical login.
 
-For public releases, the intended read remote is:
+For public releases, the read remote is:
 
 ```text
 https://github.com/stdruwe/home-manager-workstations.git
 ```
 
 No cross-repository read token is required when both repositories are public.
+The Home Manager live `flake.lock` remains ignored and machine-local; manual
+Home Manager evaluation against an installed checkout therefore uses explicit
+`path:.#<profile>` references.
 
 ## Public release model
 
@@ -204,8 +236,8 @@ nixos-install-vX.Y.Z.tar.zst.sha256
 The archive contains the matching NixOS checkout, a matching Home Manager Git
 bundle, exact snapshot metadata and the canonical `install.sh` dispatcher.
 
-Public repository history is intended to start from one clean initial commit;
-the private development history is not part of the public repositories.
+Public repository history starts from a clean public baseline; the private
+development repositories are not used as installed-system upstreams.
 
 ## CI
 

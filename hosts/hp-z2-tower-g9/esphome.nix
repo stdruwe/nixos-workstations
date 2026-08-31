@@ -4,10 +4,10 @@ let
   image = "ghcr.io/esphome/esphome:stable";
 in
 {
-  # Homelander is only the remote build worker. The authoritative ESPHome
-  # Device Builder remains the Home Assistant app. Using the official ESPHome
-  # container keeps ESP-IDF/PlatformIO and their generic Linux toolchains out
-  # of the NixOS host environment.
+  # The HP Z2 Tower G9 is only the remote build worker. The authoritative
+  # ESPHome Device Builder remains the Home Assistant app. Using the official
+  # ESPHome container keeps ESP-IDF/PlatformIO and their generic Linux
+  # toolchains out of the NixOS host environment.
   virtualisation.podman.enable = true;
 
   virtualisation.oci-containers = {
@@ -32,8 +32,9 @@ in
       extraOptions = [ "--network=host" ];
 
       # The image entrypoint maps the `dashboard` command to
-      # esphome-device-builder. Keep the UI local to Homelander while exposing
-      # only the Noise-protected remote-build peer link on the wired LAN.
+      # esphome-device-builder. Keep the UI local to this workstation while
+      # exposing only the Noise-protected remote-build peer link on the wired
+      # LAN.
       cmd = [
         "dashboard"
         "--host"

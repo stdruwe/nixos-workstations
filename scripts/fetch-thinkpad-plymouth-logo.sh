@@ -40,7 +40,7 @@ if ! content_type="$(curl \
   --retry 3 \
   --connect-timeout 10 \
   --max-time 60 \
-  --user-agent 'nixos-stefan-mobil ThinkPad Plymouth asset fetcher' \
+  --user-agent 'nixos-workstations ThinkPad Plymouth asset fetcher' \
   --output "$TMP" \
   --write-out '%{content_type}' \
   "$SOURCE_URL")"

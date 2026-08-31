@@ -1,6 +1,6 @@
 # Third-party material and provenance
 
-Last updated: 2026-08-30
+Last updated: 2026-08-31
 
 This repository contains configuration, scripts, patches and a small amount of
 redistributable third-party material. Machine-local vendor assets, fonts and
@@ -12,8 +12,8 @@ upstream source.
 
 ## Shared workstation wallpaper
 
-The shared desktop/Plymouth wallpaper is not stored in Git. It is obtained from
-the KDE Store entry:
+The shared workstation wallpaper is not stored in Git. It is obtained from the
+KDE Store entry:
 
 - KDE Store: https://store.kde.org/p/1189184
 - content ID: `1189184`
@@ -25,26 +25,26 @@ The KDE Store page does not identify a specific Creative Commons version, so no
 particular CC BY version is asserted here.
 
 `scripts/fetch-wallpaper.sh` resolves the current download URL through KDE's OCS
-API and stores the image only under the ignored machine-local asset directory:
+API and stores exactly one image under the ignored machine-local asset directory
+using one of these canonical names:
 
 ```text
 assets/local/wallpaper.png
-```
-
-or, if the source payload is JPEG:
-
-```text
 assets/local/wallpaper.jpg
+assets/local/wallpaper.jpeg
 ```
 
-The installer fetches the wallpaper during non-destructive preflight. A normal
-boot also has a best-effort repair service for a missing local copy. Clean
-checkouts remain buildable without the wallpaper and use a plain black Plymouth
-fallback until the local asset exists.
+Multiple variants at the same time are rejected. The installer fetches the
+wallpaper during non-destructive preflight. A normal boot also has a best-effort
+repair service for a missing local copy. Clean checkouts remain buildable
+without the wallpaper and use a plain black Plymouth fallback until the local
+asset exists.
 
-The ThinkPad 2880x1800, MacBook 2560x1600 and HP 1920x1080 Plymouth backgrounds
-are generated from this local source during the respective Nix build; no
-profile-specific derived background image is stored in Git.
+The selected local image is the shared source for Plymouth and the configured
+desktop, lock-screen and greeter/login surfaces on Plasma and COSMIC. The
+ThinkPad 2880x1800, MacBook 2560x1600 and HP 1920x1080 Plymouth backgrounds are
+generated from this source during the respective Nix build; no profile-specific
+derived background image is stored in Git.
 
 ## NixOS snowflake artwork
 
