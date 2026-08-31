@@ -50,6 +50,14 @@ When changing one of these, update the adjacent code comment and this document i
 
 **Retest before shortening/removal:** start gpsd/GNSS immediately after modem initialization and after resume; verify that the first GNSS request succeeds consistently.
 
+## ThinkPad X1 Carbon Gen 13: ModemManager stop timeout
+
+**Invariant:** `systemd.services.ModemManager.serviceConfig.TimeoutStopSec = "5s"` remains configured.
+
+**Historical rationale:** not yet documented in the public repository. The value predates this operational-invariant audit. Do not infer a reason from the number alone and do not remove or change it as cleanup until its original failure mode has been recovered from prior notes or reproduced on the ThinkPad.
+
+**Required follow-up before change:** determine whether the timeout protects rebuild/restart behavior, suspend/resume, modem shutdown, or another observed failure. Once confirmed, replace this paragraph with the verified reason and a concrete retest criterion.
+
 ## ThinkPad X1 Carbon Gen 13: thermald
 
 **Invariant:** `services.thermald.enable = false`.
