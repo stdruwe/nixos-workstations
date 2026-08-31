@@ -1,7 +1,13 @@
 { lib, ... }:
 
 let
-  deploymentFile = ../../local/deployment.json;
+  localDeploymentFile = ../../local/deployment.json;
+  bootstrapDeploymentFile = ../../deployment.json;
+  deploymentFile =
+    if builtins.pathExists localDeploymentFile then
+      localDeploymentFile
+    else
+      bootstrapDeploymentFile;
   deployment =
     if builtins.pathExists deploymentFile then
       builtins.fromJSON (builtins.readFile deploymentFile)
