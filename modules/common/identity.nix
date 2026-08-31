@@ -1,7 +1,13 @@
 { config, lib, ... }:
 
 let
-  identityFile = ../../local/identity.json;
+  localIdentityFile = ../../local/identity.json;
+  bootstrapIdentityFile = ../../identity.json;
+  identityFile =
+    if builtins.pathExists localIdentityFile then
+      localIdentityFile
+    else
+      bootstrapIdentityFile;
   identity =
     if builtins.pathExists identityFile then
       builtins.fromJSON (builtins.readFile identityFile)
@@ -9,8 +15,9 @@ let
       throw ''
         Local identity is missing: /etc/nixos/local/identity.json
 
-        This file is intentionally not versioned and must contain at least
-        hostName, userName and fullName.
+        During installation only, /etc/nixos/identity.json is accepted as a
+        bootstrap input and is migrated into local/ during activation.
+        The identity must contain at least hostName, userName and fullName.
       '';
 in
 {
