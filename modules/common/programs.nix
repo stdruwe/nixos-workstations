@@ -14,16 +14,17 @@ let
   # Consistent Gecko defaults across all hardware profiles. Websites and HTML
   # mail may still request their own fonts; these preferences define the
   # generic sans-serif/serif/monospace families and defaults for Latin and
-  # other Unicode text.
+  # other Unicode text. New York Medium is a Fontconfig alias that resolves to
+  # Apple's New York variable family at Medium weight for normal serif text.
   geckoFontPreferences = {
     "font.default.x-western" = lockedPreference "sans-serif";
     "font.name.sans-serif.x-western" = lockedPreference "SF Pro";
-    "font.name.serif.x-western" = lockedPreference "New York";
+    "font.name.serif.x-western" = lockedPreference "New York Medium";
     "font.name.monospace.x-western" = lockedPreference "SF Mono";
 
     "font.default.x-unicode" = lockedPreference "sans-serif";
     "font.name.sans-serif.x-unicode" = lockedPreference "SF Pro";
-    "font.name.serif.x-unicode" = lockedPreference "New York";
+    "font.name.serif.x-unicode" = lockedPreference "New York Medium";
     "font.name.monospace.x-unicode" = lockedPreference "SF Mono";
   };
 in
@@ -59,7 +60,7 @@ in
           install_url = "https://addons.mozilla.org/firefox/downloads/latest/bitwarden-password-manager/latest.xpi";
           installation_mode = "force_installed";
         };
-        "gesturefy@robbendebiene.de" = {
+        "gesturefy@robbedebiene.de" = {
           install_url = "https://addons.mozilla.org/firefox/downloads/latest/gesturefy/latest.xpi";
           installation_mode = "normal_installed";
         };
