@@ -11,8 +11,8 @@ For a planned tag such as `v0.1.0`:
 1. Finish all intended NixOS and Home Manager changes and merge them to `main`.
 2. Run the Home Manager `Refresh Home Manager release lock` workflow manually and let it finish successfully.
 3. If that workflow commits a changed `flake.lock.bootstrap`, wait for the resulting `main` CI to finish successfully.
-4. Run the NixOS `Refresh NixOS release lock` workflow manually and let it finish successfully.
-5. If that workflow commits changed `lon.nix` or `lon.lock`, wait for the resulting `main` CI to finish successfully.
+4. Run the NixOS `Refresh NixOS release lock` workflow manually and let it finish successfully. This refresh covers the tracked `lon.nix`/`lon.lock` state and the tracked `pkgs/filebot-source.nix` FileBot bootstrap source before validating all three hardware profiles.
+5. If that workflow commits changed `lon.nix`, `lon.lock` or `pkgs/filebot-source.nix`, wait for the resulting `main` CI to finish successfully.
 6. Confirm that both repositories' final `main` commits are the exact commits intended for the release and that both normal CI suites are green.
 7. Do not create release tags while either release-lock workflow or its follow-up CI is still changing or validating `main`.
 
