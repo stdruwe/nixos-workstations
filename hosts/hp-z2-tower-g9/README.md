@@ -11,6 +11,6 @@ Technical hardware profile: `hp-z2-tower-g9`
 - the installer receives the Disko target at runtime; no SSD serial number or fixed disk ID is stored in this profile
 - Hermes is not part of this hardware profile
 
-Hostname and local username are deliberately not part of this profile. They are selected through the local untracked files `/etc/nixos/profile.nix` and `/etc/nixos/identity.json`.
+Hostname and local username are deliberately not part of this profile. The canonical machine-local selector and identity live in `/etc/nixos/local/profile.nix` and `/etc/nixos/local/identity.json`.
 
 Installation details are in `README-INSTALL.md`; verified hardware notes are in `NOTES.md`.
