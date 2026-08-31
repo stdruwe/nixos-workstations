@@ -100,7 +100,23 @@ jobs:
           }
           EOF
 
-          cat > local/deployment.json <<'EOF'
+          if [[ "${{ matrix.profile }}" == "thinkpad-x1-carbon-gen13" ]]; then
+            cat > local/deployment.json <<'EOF'
+          {
+            "networking": {
+              "localSubnets": [
+                "192.0.2.0/24",
+                "2001:db8:1234::/64"
+              ],
+              "wwan": {
+                "connectionId": "Example WWAN",
+                "apn": "internet.example"
+              }
+            }
+          }
+          EOF
+          else
+            cat > local/deployment.json <<'EOF'
           {
             "networking": {
               "localSubnets": [
@@ -110,6 +126,7 @@ jobs:
             }
           }
           EOF
+          fi
 
           cat > local/profile.nix <<'EOF'
           { ... }:

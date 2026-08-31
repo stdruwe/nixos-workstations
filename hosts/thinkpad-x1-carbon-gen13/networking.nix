@@ -1,32 +1,82 @@
-{ pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
+let
+  wwanRaw =
+    lib.attrByPath [ "networking" "wwan" ] null config.workstation.deployment;
+  wwan =
+    if wwanRaw == null then
+      null
+    else if builtins.isAttrs wwanRaw then
+      wwanRaw
+    else
+      throw "deployment.json networking.wwan must be an attribute set";
+
+  wwanConnectionId =
+    if wwan == null then
+      null
+    else
+      let
+        value = wwan.connectionId or null;
+      in
+      if builtins.isString value && value != "" then
+        value
+      else
+        throw "deployment.json networking.wwan.connectionId must be a non-empty string";
+
+  wwanApn =
+    if wwan == null then
+      null
+    else
+      let
+        value = wwan.apn or null;
+      in
+      if builtins.isString value && value != "" then
+        value
+      else
+        throw "deployment.json networking.wwan.apn must be a non-empty string";
+
+  wwanProfiles =
+    if wwan == null then
+      { }
+    else
+      {
+        ${wwanConnectionId} = {
+          connection = {
+            id = wwanConnectionId;
+            type = "gsm";
+            autoconnect = "true";
+            autoconnect-priority = 0;
+          };
+
+          gsm = {
+            apn = wwanApn;
+            auto-config = "false";
+          };
+
+          # Keep mobile broadband behind Ethernet/Wi-Fi in the normal route
+          # preference order while still allowing it to provide connectivity
+          # when the faster local links are unavailable.
+          ipv4 = {
+            method = "auto";
+            route-metric = 700;
+          };
+
+          ipv6 = {
+            method = "auto";
+            route-metric = 700;
+          };
+        };
+      };
+in
 {
   networking.networkmanager = {
     wifi.powersave = true;
 
-    ensureProfiles.profiles."Vodafone" = {
-      connection = {
-        id = "Vodafone";
-        type = "gsm";
-        autoconnect = "true";
-        autoconnect-priority = 0;
-      };
-
-      gsm = {
-        apn = "web.vodafone.de";
-        auto-config = "false";
-      };
-
-      ipv4 = {
-        method = "auto";
-        route-metric = 700;
-      };
-
-      ipv6 = {
-        method = "auto";
-        route-metric = 700;
-      };
-    };
+    # Carrier/profile names and APNs are deployment-specific rather than a
+    # property of the RM520N-GL hardware. Keep them in ignored
+    # local/deployment.json; the hardware profile remains usable without a
+    # predefined carrier connection.
+    ensureProfiles.profiles = wwanProfiles;
   };
 
   networking.modemmanager = {

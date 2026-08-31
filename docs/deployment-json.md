@@ -15,9 +15,9 @@ the NixOS and matching Home Manager repositories.
 - The file must contain one JSON object.
 - Keep hardware identity in `local/profile.nix` and user/machine identity in
   `local/identity.json`; do not duplicate those values here.
-- Public SSH keys and internal service addresses are valid deployment data, but
-  they still reveal infrastructure details. Keep the file out of the public
-  repository.
+- Public SSH keys, internal service addresses and mobile-provider connection
+  parameters are valid deployment data, but they still reveal infrastructure or
+  subscription choices. Keep the file out of the public repository.
 - Passwords, API tokens, private SSH keys and other secrets should live in the
   dedicated credential stores referenced by the configuration, not directly in
   `deployment.json`.
@@ -38,7 +38,11 @@ Only keep the sections required by the target machine.
     "localSubnets": [
       "192.0.2.0/24",
       "2001:db8:1234::/64"
-    ]
+    ],
+    "wwan": {
+      "connectionId": "Example WWAN",
+      "apn": "internet.example"
+    }
   },
   "plasma": {
     "dolphinBookmark": {
@@ -140,6 +144,49 @@ with the current physical LAN.
 
 The list defaults to empty, in which case no additional policy rules are
 installed.
+
+## `networking.wwan`
+
+Used by the WWAN-capable ThinkPad profile to create one declarative
+NetworkManager GSM connection without embedding a carrier name or APN in the
+public hardware profile.
+
+The whole subsection is optional. When it is absent, ModemManager, FCC unlock,
+GNSS support and the hardware-specific WWAN power-management workarounds remain
+enabled, but NixOS does not create a provider connection automatically. Existing
+ad-hoc NetworkManager connections may still be managed interactively.
+
+Required fields when the subsection is present:
+
+- `connectionId` — non-empty string; the local NetworkManager connection name.
+- `apn` — non-empty string; the mobile-provider APN.
+
+```json
+{
+  "networking": {
+    "wwan": {
+      "connectionId": "Example WWAN",
+      "apn": "internet.example"
+    }
+  }
+}
+```
+
+The generated connection autoconnects with priority `0`, uses automatic IPv4
+and IPv6 configuration, disables NetworkManager's provider auto-configuration
+because the APN is explicit, and assigns route metric `700` to both address
+families. The metric is part of the workstation routing policy: Ethernet and
+Wi-Fi remain preferred while WWAN provides fallback connectivity.
+
+Provider names and APNs are not credentials, but they are deployment/subscription
+choices and therefore belong in ignored `local/deployment.json`, not in the
+technical hardware profile. SIM PINs, passwords or other carrier credentials
+must not be added to this subsection.
+
+When migrating an installed system from a previously tracked declarative GSM
+profile, populate `networking.wwan` before activating a configuration that
+removes the old public profile. NixOS `ensureProfiles` connections are generated
+state and a removed declarative profile can disappear on the next reboot.
 
 ## `plasma.dolphinBookmark`
 
