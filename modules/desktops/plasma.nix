@@ -218,16 +218,21 @@ PYTHON
   '';
 in
 {
-  services.displayManager.plasma-login-manager = {
-    enable = true;
-    settings = lib.mkIf wallpaperAvailable {
-      Greeter.WallpaperPlugin = "org.kde.image";
-      "Greeter][Wallpaper][org.kde.image][General" = {
-        Image = wallpaperUri;
-        PreviewImage = wallpaperUri;
-      };
-    };
-  };
+  services.displayManager.plasma-login-manager.enable = true;
+
+  # Plasma Login Manager uses nested KConfig groups such as
+  # [Greeter][Wallpaper][org.kde.image][General]. The generic Nix INI
+  # renderer escapes those brackets, so write this dedicated drop-in with
+  # native KConfig syntax instead of routing it through the `settings` option.
+  environment.etc."plasmalogin.conf.d/zz-nixos-wallpaper.conf".text =
+    lib.optionalString wallpaperAvailable ''
+      [Greeter]
+      WallpaperPlugin=org.kde.image
+
+      [Greeter][Wallpaper][org.kde.image][General]
+      Image=${wallpaperUri}
+      PreviewImage=${wallpaperUri}
+    '';
 
   services.desktopManager.plasma6.enable = true;
   services.xserver.enable = false;
