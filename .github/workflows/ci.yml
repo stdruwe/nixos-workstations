@@ -90,7 +90,7 @@ jobs:
 
       - name: Prepare local-only inputs
         run: |
-          mkdir -p fonts/apple
+          mkdir -p fonts/apple assets/local
 
           cat > identity.json <<'EOF'
           {
@@ -108,6 +108,12 @@ jobs:
               ./hosts/${{ matrix.profile }}/default.nix
             ];
           }
+          EOF
+
+          # Exercise the real machine-local wallpaper path instead of only the
+          # no-wallpaper fallback. This is a minimal valid 1x1 PNG.
+          base64 -d > assets/local/wallpaper.png <<'EOF'
+          iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=
           EOF
 
       - name: Evaluate NixOS system
