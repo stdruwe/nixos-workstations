@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, pkgs, ... }:
 
 {
   imports = [
@@ -13,4 +13,8 @@
     enable = true;
     user = config.workstation.userName;
   };
+
+  # Radeon-specific diagnostics complement the combined Intel/AMD nvtop build
+  # from hardware.nix without adding AMD-only tooling to other profiles.
+  environment.systemPackages = [ pkgs.amdgpu_top ];
 }
