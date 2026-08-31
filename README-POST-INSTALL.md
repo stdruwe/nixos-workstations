@@ -17,12 +17,15 @@ This checklist applies after a fresh installation from the version-matched NixOS
    systemctl --failed
    ```
 
-4. Confirm the local profile and identity files:
+4. Confirm the canonical machine-local recovery files:
 
    ```bash
-   cat /etc/nixos/profile.nix
-   cat /etc/nixos/identity.json
+   cat /etc/nixos/local/profile.nix
+   cat /etc/nixos/local/identity.json
+   cat /etc/nixos/local/deployment.json
    ```
+
+   Fresh installers use temporary root-level bootstrap files before activation. The first NixOS activation migrates them into `/etc/nixos/local/`; the three files above are the canonical runtime state.
 
 5. Verify the expected filesystems and swap:
 
@@ -40,7 +43,7 @@ This checklist applies after a fresh installation from the version-matched NixOS
    topgrade
    ```
 
-Machine-local data such as `identity.json`, optional `deployment.json`, Apple fonts, wallpaper, optional Plymouth vendor logos, EasyEffects tuning and live dependency state is intentionally excluded from Git. Back up any local data that cannot simply be regenerated.
+The dedicated NixOS recovery backup consists only of `/etc/nixos/local/`. Apple fonts, wallpaper, optional Plymouth vendor logos, generated EasyEffects baseline tuning and live dependency state are intentionally excluded because they can be regenerated or refreshed.
 
 ## ThinkPad X1 Carbon Gen 13 / HP Z2 Tower G9
 
@@ -73,6 +76,16 @@ The Apple EFI and macOS/APFS partitions remain outside the normal NixOS update w
 
 ## Optional deployment data
 
-Local infrastructure belongs in ignored `/etc/nixos/deployment.json`. A missing file is valid. Use it only when the machine needs deployment-specific values such as SSH authorized keys, a remote Nix builder, desktop integration data, Hermes endpoints or a non-default Topgrade dependency policy.
+Local infrastructure belongs in ignored `/etc/nixos/local/deployment.json`. After activation the file always exists; an empty deployment is `{}`. Use it only when the machine needs deployment-specific values such as SSH authorized keys, a remote Nix builder, desktop integration data, Hermes endpoints or a non-default Topgrade dependency policy.
 
 Do not commit passwords, tokens, private keys, personal addresses or machine-local deployment endpoints.
+
+## Recovery backup
+
+Use an external filesystem:
+
+```bash
+sudo /etc/nixos/scripts/backup-config.sh /path/to/external-backup-directory
+```
+
+The helper archives only `/etc/nixos/local/` and verifies the archive checksum. The public Git checkout and reproducible/generated state are intentionally not duplicated in the recovery archive.
