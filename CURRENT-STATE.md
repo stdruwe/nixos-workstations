@@ -319,12 +319,14 @@ published because the NixOS release workflow immediately checks out that tag to
 build the combined installation package. `docs/release-process.md` is the
 canonical pre-release, publication and post-release checklist.
 
-The tracked `lon.lock` is the NixOS release/bootstrap dependency state. The
-`Refresh NixOS release lock` workflow can be run manually before a release and
-also checks weekly. It runs `lon update`, evaluates all three profiles against
-the candidate state and commits a changed tracked lock only after successful
+Tracked `lon.nix`, `lon.lock` and `pkgs/filebot-source.nix` together form the
+NixOS clean-checkout/release bootstrap dependency state. The `Refresh NixOS
+release lock` workflow can be run manually before a release and also checks
+weekly. It refreshes `lon` state and the tracked FileBot release/source checksum,
+then evaluates all three profiles against the complete candidate bootstrap
+state. Any changed bootstrap files are committed together only after successful
 validation. Installed systems continue to update their independent ignored
-`.local-sources/` state through Topgrade.
+`.local-sources/` copies through Topgrade.
 
 The NixOS release workflow builds:
 
