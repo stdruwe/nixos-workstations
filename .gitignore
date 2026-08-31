@@ -15,10 +15,11 @@ secrets/
 /.local-sources/
 /result
 
-# Local system identity, profile and deployment data
+# Canonical machine-local recovery state
+/local/
+
+# Legacy local selectors/state kept ignored for pre-v0.1.0 migration only
 /profile.nix
 /identity.json
 /deployment.json
-
-# Legacy local host selector kept ignored during migration
 /host.nix
