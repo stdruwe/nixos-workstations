@@ -36,5 +36,12 @@
         ${pkgs.coreutils}/bin/rm -f "$local_dir/deployment.json.tmp"
       fi
     fi
+
+    for file in profile.nix identity.json deployment.json; do
+      if [ -f "$local_dir/$file" ]; then
+        ${pkgs.coreutils}/bin/chown root:wheel "$local_dir/$file"
+        ${pkgs.coreutils}/bin/chmod 0660 "$local_dir/$file"
+      fi
+    done
   '';
 }
