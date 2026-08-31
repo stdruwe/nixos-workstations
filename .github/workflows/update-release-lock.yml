@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   refresh:
-    name: Refresh and validate lon release state
+    name: Refresh and validate NixOS release bootstrap state
     runs-on: ubuntu-24.04
 
     steps:
@@ -43,6 +43,18 @@ jobs:
             echo "lon update failed with status $lon_status." >&2
             exit "$lon_status"
           fi
+
+      - name: Refresh tracked FileBot source
+        shell: bash
+        run: |
+          nix shell \
+            nixpkgs#curl \
+            nixpkgs#coreutils \
+            nixpkgs#gnugrep \
+            nixpkgs#gnused \
+            --command bash \
+              scripts/update-filebot-source.sh \
+              pkgs/filebot-source.nix
 
       - name: Validate all NixOS profiles
         shell: bash
@@ -76,7 +88,7 @@ jobs:
           }
           EOF
 
-            echo "Evaluating $profile with refreshed lon state..."
+            echo "Evaluating $profile with refreshed release bootstrap state..."
             nix-instantiate '<nixpkgs/nixos>' \
               -A system \
               -I nixos-config="$PWD/configuration.nix" \
@@ -88,13 +100,13 @@ jobs:
       - name: Commit refreshed release state
         shell: bash
         run: |
-          if git diff --quiet -- lon.nix lon.lock; then
-            echo "Tracked lon release state is already current."
+          if git diff --quiet -- lon.nix lon.lock pkgs/filebot-source.nix; then
+            echo "Tracked NixOS release bootstrap state is already current."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add lon.nix lon.lock
-          git commit -m "chore(deps): refresh release lon state"
+          git add lon.nix lon.lock pkgs/filebot-source.nix
+          git commit -m "chore(deps): refresh NixOS release bootstrap state"
           git push origin HEAD:main
