@@ -61,6 +61,44 @@ in
       lcdfilter = "default";
     };
 
+    # "New York Medium" is a local semantic alias. Apple ships New York as a
+    # variable family, so the alias keeps the real family name while promoting
+    # only regular-weight serif requests to Medium. Explicit Bold/Semibold
+    # requests therefore continue to resolve to their requested weight.
+    localConf = ''
+      <?xml version="1.0"?>
+      <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+      <fontconfig>
+        <match target="pattern">
+          <test qual="any" name="family" compare="eq">
+            <string>serif</string>
+          </test>
+          <test name="weight" compare="eq">
+            <const>regular</const>
+          </test>
+          <edit name="weight" mode="assign">
+            <const>medium</const>
+          </edit>
+        </match>
+
+        <match target="pattern">
+          <test qual="any" name="family" compare="eq">
+            <string>New York Medium</string>
+          </test>
+          <test name="weight" compare="eq">
+            <const>regular</const>
+          </test>
+          <edit name="weight" mode="assign">
+            <const>medium</const>
+          </edit>
+        </match>
+      </fontconfig>
+    '';
+
+    aliases."New York Medium" = {
+      prefer = [ "New York" ];
+    };
+
     defaultFonts = lib.mkForce {
       sansSerif = [
         "SF Pro"
@@ -68,7 +106,7 @@ in
       ];
 
       serif = [
-        "New York"
+        "New York Medium"
         "Noto Serif"
       ];
 
