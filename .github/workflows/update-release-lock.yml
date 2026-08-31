@@ -47,7 +47,9 @@ jobs:
       - name: Validate all NixOS profiles
         shell: bash
         run: |
-          cat > identity.json <<'EOF'
+          mkdir -p local
+
+          cat > local/identity.json <<'EOF'
           {
             "hostName": "ci-host",
             "userName": "ciuser",
@@ -55,17 +57,21 @@ jobs:
           }
           EOF
 
+          cat > local/deployment.json <<'EOF'
+          {}
+          EOF
+
           for profile in \
             thinkpad-x1-carbon-gen13 \
             hp-z2-tower-g9 \
             apple-macbook-air-8-1
           do
-            cat > profile.nix <<EOF
+            cat > local/profile.nix <<EOF
           { ... }:
 
           {
             imports = [
-              ./hosts/$profile/default.nix
+              ../hosts/$profile/default.nix
             ];
           }
           EOF
@@ -77,7 +83,7 @@ jobs:
               >/dev/null
           done
 
-          rm -f identity.json profile.nix
+          rm -rf local
 
       - name: Commit refreshed release state
         shell: bash
