@@ -14,11 +14,26 @@ file.
 - traditional NixOS configuration, not a NixOS flake
 - public version history starts at `v0.1.0`
 - `configuration.nix` is tracked and hardware/identity-neutral
-- ignored local `profile.nix` selects one technical hardware profile
-- ignored local `identity.json` provides hostname and local user identity
-- optional ignored local `deployment.json` provides deployment-specific infrastructure
+- canonical machine-local recovery state lives only under `/etc/nixos/local/`
+- `local/profile.nix` selects one technical hardware profile
+- `local/identity.json` provides hostname and local user identity
+- `local/deployment.json` provides optional deployment-specific infrastructure; an empty deployment is `{}`
 - tracked `lon.nix`, `lon.lock` and `pkgs/filebot-source.nix` are clean-checkout/bootstrap state
 - ignored `.local-sources/` contains machine-local managed source state
+
+Exactly three files make up the canonical NixOS recovery state:
+
+```text
+/etc/nixos/local/profile.nix
+/etc/nixos/local/identity.json
+/etc/nixos/local/deployment.json
+```
+
+Root-level `profile.nix`, `identity.json` and `deployment.json` are accepted only
+as installer/bootstrap inputs. `modules/common/local-state.nix` migrates them to
+`local/` during activation. Generated assets, downloaded fonts, local tuning,
+managed-source pins and tracked release/bootstrap state are deliberately outside
+this recovery set because they are reproducible or maintained separately.
 
 Hardware profile, hostname, username and deployment infrastructure are
 independent. Documentation and tracked code use technical profile names or
@@ -50,8 +65,9 @@ personal usernames.
 - runtime target disk selection; no disk serial or fixed disk ID in Git
 - fixed 96 kHz PipeWire graph for the profile
 - ESPHome Device Builder remote-build worker remains profile-specific
-- optional builder authorization comes only from local `deployment.json`
+- optional builder authorization comes only from `local/deployment.json`
 - HP Plymouth logo is optional machine-local data
+- Radeon-specific `amdgpu_top` is installed only for this hardware profile
 
 ### `apple-macbook-air-8-1`
 
@@ -67,11 +83,16 @@ personal usernames.
 
 ## Local identity and deployment
 
-`modules/common/identity.nix` validates local identity and provides hostname,
-username, full name and home directory.
+`modules/common/identity.nix` validates `local/identity.json` and provides
+hostname, username, full name and home directory. During installer evaluation it
+accepts the historical root-level `identity.json` as a bootstrap fallback only.
 
-`modules/common/deployment.nix` reads optional ignored `deployment.json`. A
-missing file is valid. It can supply:
+`modules/common/deployment.nix` reads `local/deployment.json`. During installer
+evaluation it may fall back to root-level `deployment.json`; absence is treated
+as an empty deployment. Activation ensures that canonical
+`local/deployment.json` exists and contains at least `{}`.
+
+Deployment data can supply:
 
 - user SSH authorized keys
 - local physical subnets that must outrank overlapping overlay routes
@@ -105,17 +126,15 @@ normal activation remain enabled.
 No password hash, personal SSH key, deployment hostname/address or service
 endpoint belongs in the tracked hardware profiles.
 
-## Local assets and fonts
+## Local generated assets and fonts
 
-The following are intentionally ignored and machine-local:
+The following are ignored and machine-local but are **not** part of the
+canonical NixOS recovery state:
 
 - `fonts/apple/`
 - `assets/local/`
 - `audio/easyeffects/local/`
 - `.local-sources/`
-- `profile.nix`
-- `identity.json`
-- optional `deployment.json`
 
 ### Shared wallpaper
 
@@ -172,7 +191,8 @@ explicit stronger weights are not flattened to Medium. Firefox, Zen Browser and
 Thunderbird use the same SF Pro / New York Medium / SF Mono generic defaults.
 
 Installation and `scripts/update-apple-fonts.sh` obtain SF Pro, SF Mono and New
-York from Apple's Developer CDN. Font binaries are never stored in Git.
+York from Apple's Developer CDN. Font binaries are never stored in Git and are
+not required in recovery backups.
 
 ## ThinkPad EasyEffects model
 
@@ -195,6 +215,31 @@ runtime `Dolby-Dynamic-Balanced.json` to ignored
 over the generated baseline when present.
 
 No device-specific Dolby/OEM-derived tuning output is stored in Git.
+
+## Diagnostics and mobile-device tooling
+
+Shared diagnostics are kept in dedicated common modules rather than expanding
+the generic package list indiscriminately.
+
+`modules/common/diagnostics.nix` provides hardware/firmware, storage/recovery,
+network, graphics/display, TPM/UEFI and performance tools. Wireshark is enabled
+through the NixOS module and the configured workstation user receives capture
+access through the `wireshark` group. Kernel `perf` is taken from the selected
+kernel package set.
+
+`modules/common/mobile-tools.nix` provides:
+
+- Android `adb` and `fastboot` via `android-tools`
+- `scrcpy`
+- `picocom` and `dfu-util`
+- `usbmuxd`
+- `libimobiledevice`, `ifuse`, `idevicerestore`, `libirecovery`,
+  `ideviceinstaller` and `libplist`
+
+`pymobiledevice3` is intentionally not installed while its current nixpkgs
+`pyimg4` dependency is marked broken because of the upstream `asn1 >= 3`
+compatibility issue. Do not enable global `allowBroken` for this package; re-add
+it when nixpkgs carries a working dependency chain.
 
 ## Storage and boot
 
@@ -228,6 +273,17 @@ No cross-repository read token is required when both repositories are public.
 The Home Manager live `flake.lock` remains ignored and machine-local; manual
 Home Manager evaluation against an installed checkout therefore uses explicit
 `path:.#<profile>` references.
+
+## Backup and recovery
+
+`scripts/backup-config.sh` backs up only `/etc/nixos/local/`. It requires the
+three canonical files and creates a compressed archive, SHA-256 checksum and
+manifest. The public Git checkout, `.local-sources/`, downloaded/generated
+assets, release locks and other reproducible state are intentionally excluded.
+
+This keeps recovery responsibilities explicit: restore the three local files,
+obtain the public repository state, then let the normal installer/update paths
+regenerate everything else.
 
 ## Public release model
 
@@ -263,13 +319,14 @@ development repositories are not used as installed-system upstreams.
 - the macOS Zsh helper with `zsh -n`
 - Python helper syntax
 - GitHub Actions syntax via actionlint
-- all three NixOS profile evaluations
+- all three NixOS profiles with canonical `local/` recovery-state fixtures
+- all three NixOS profiles again through the installer/bootstrap root fallback
 - the deployment-local overlapping-subnet policy during profile evaluation
 - one real Plymouth theme build per profile
 
 Clean-checkout CI must not depend on real local identity, `.local-sources/`,
-wallpaper, vendor logos or ThinkPad tuning. The CI-only `deployment.json` is a
-documentation-range fixture rather than real infrastructure data.
+wallpaper, vendor logos or ThinkPad tuning. CI deployment fixtures use only
+documentation-range addresses.
 
 ## Topgrade
 
