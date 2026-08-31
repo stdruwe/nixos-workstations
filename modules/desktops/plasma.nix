@@ -23,16 +23,10 @@ let
     else
       "Network share";
 
-  wallpaperPng = ../../assets/local/wallpaper.png;
-  wallpaperJpg = ../../assets/local/wallpaper.jpg;
-  wallpaperPath =
-    if builtins.pathExists wallpaperPng then
-      wallpaperPng
-    else if builtins.pathExists wallpaperJpg then
-      wallpaperJpg
-    else
-      null;
-  wallpaperAvailable = wallpaperPath != null;
+  wallpaperSource = config.workstation.wallpaper.source;
+  wallpaperPath = config.workstation.wallpaper.runtimePath;
+  wallpaperAvailable = wallpaperSource != null && wallpaperPath != null;
+  wallpaperUri = if wallpaperAvailable then "file://${wallpaperPath}" else "";
 
   kateWithPipeWire = pkgs.symlinkJoin {
     name = "kate-with-pipewire";
@@ -103,31 +97,45 @@ for output in active_outputs:
     touch "$marker"
   '';
 
-  setDefaultWallpaper = pkgs.writeShellScript "set-default-wallpaper" ''
+  syncWallpaper = pkgs.writeShellScript "sync-plasma-wallpaper" ''
     set -u
 
-    state_dir="''${XDG_STATE_HOME:-$HOME/.local/state}/nixos"
-    marker="$state_dir/default-wallpaper-initialized"
-
-    [ -e "$marker" ] && exit 0
-
     ${if wallpaperAvailable then ''
-      wallpaper=${wallpaperPath}
+      wallpaper=${lib.escapeShellArg wallpaperPath}
+      wallpaper_uri=${lib.escapeShellArg wallpaperUri}
 
+      # Plasma's lock screen uses a separate KConfig file from the desktop.
+      ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 \
+        --file "$HOME/.config/kscreenlockerrc" \
+        --group Greeter \
+        --group Wallpaper \
+        --group org.kde.image \
+        --group General \
+        --key Image \
+        "$wallpaper_uri"
+
+      ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 \
+        --file "$HOME/.config/kscreenlockerrc" \
+        --group Greeter \
+        --group Wallpaper \
+        --group org.kde.image \
+        --group General \
+        --key PreviewImage \
+        "$wallpaper_uri"
+
+      # Apply the same source to every active Plasma desktop. During a system
+      # activation Plasma may not be running yet, so failure is non-fatal; the
+      # desktop autostart below retries on every login.
       for _ in $(${pkgs.coreutils}/bin/seq 1 50); do
         if ${pkgs.kdePackages.plasma-workspace}/bin/plasma-apply-wallpaperimage \
           "$wallpaper" >/dev/null 2>&1; then
-          mkdir -p "$state_dir"
-          touch "$marker"
           exit 0
         fi
-
         ${pkgs.coreutils}/bin/sleep 0.2
       done
     '' else ''
-      # Installation normally fetches the local wallpaper before the first
-      # build. Leave the marker absent so a later login can retry if it was not
-      # available yet.
+      # Installation normally fetches the ignored machine-local wallpaper
+      # before the first build. A later rebuild will pick it up automatically.
       :
     ''}
 
@@ -210,7 +218,17 @@ PYTHON
   '';
 in
 {
-  services.displayManager.plasma-login-manager.enable = true;
+  services.displayManager.plasma-login-manager = {
+    enable = true;
+    settings = lib.mkIf wallpaperAvailable {
+      Greeter.WallpaperPlugin = "org.kde.image";
+      "Greeter][Wallpaper][org.kde.image][General" = {
+        Image = wallpaperUri;
+        PreviewImage = wallpaperUri;
+      };
+    };
+  };
+
   services.desktopManager.plasma6.enable = true;
   services.xserver.enable = false;
 
@@ -230,6 +248,12 @@ in
   programs.partition-manager.enable = true;
   programs.kdeconnect.enable = true;
 
+  system.userActivationScripts.syncPlasmaWallpaper = {
+    text = ''
+      ${syncWallpaper}
+    '';
+  };
+
   environment.etc."xdg/autostart/nixos-default-display-scale.desktop".text = ''
     [Desktop Entry]
     Type=Application
@@ -239,11 +263,11 @@ in
     NoDisplay=true
   '';
 
-  environment.etc."xdg/autostart/nixos-default-wallpaper.desktop".text = ''
+  environment.etc."xdg/autostart/nixos-wallpaper-sync.desktop".text = ''
     [Desktop Entry]
     Type=Application
-    Name=NixOS Wallpaper Default
-    Exec=${setDefaultWallpaper}
+    Name=NixOS Wallpaper Sync
+    Exec=${syncWallpaper}
     OnlyShowIn=KDE;
     NoDisplay=true
   '';
