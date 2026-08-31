@@ -15,6 +15,8 @@
     ./fastfetch.nix
     ./users.nix
     ./packages.nix
+    ./diagnostics.nix
+    ./mobile-tools.nix
     ./fonts.nix
     ./audio.nix
     ./spotify.nix
