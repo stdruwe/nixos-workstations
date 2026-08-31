@@ -45,7 +45,7 @@ EOF_USAGE
 
 DEST_DIR="$1"
 
-for command in tar zstd sha256sum findmnt realpath hostname date stat mkdir basename sync; do
+for command in tar zstd sha256sum findmnt realpath hostname date stat mkdir basename sync tr; do
   command -v "$command" >/dev/null || die "Required program is missing: $command"
 done
 
