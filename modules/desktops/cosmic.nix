@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, pkgs, ... }:
 
 let
   wallpaperSource = config.workstation.wallpaper.source;
@@ -33,7 +33,8 @@ in
       config_dir="$HOME/.config/cosmic/com.system76.CosmicBackground/v1"
       ${pkgs.coreutils}/bin/mkdir -p "$config_dir"
       ${pkgs.coreutils}/bin/cat > "$config_dir/all.tmp" <<'EOF_WALLPAPER'
-${cosmicWallpaper}EOF_WALLPAPER
+${cosmicWallpaper}
+EOF_WALLPAPER
       ${pkgs.coreutils}/bin/mv "$config_dir/all.tmp" "$config_dir/all"
     '' else ''
       :
@@ -52,7 +53,8 @@ ${cosmicWallpaper}EOF_WALLPAPER
         -g cosmic-greeter \
         "$config_dir"
       ${pkgs.coreutils}/bin/cat > "$config_dir/all.tmp" <<'EOF_WALLPAPER'
-${cosmicWallpaper}EOF_WALLPAPER
+${cosmicWallpaper}
+EOF_WALLPAPER
       ${pkgs.coreutils}/bin/chown cosmic-greeter:cosmic-greeter "$config_dir/all.tmp"
       ${pkgs.coreutils}/bin/chmod 0644 "$config_dir/all.tmp"
       ${pkgs.coreutils}/bin/mv "$config_dir/all.tmp" "$config_dir/all"
