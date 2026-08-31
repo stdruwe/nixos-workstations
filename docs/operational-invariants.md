@@ -11,10 +11,19 @@ Treat the following as design decisions, not cleanup candidates, until their rat
 - service ordering and overridden systemd commands;
 - kernel parameters and kernel patches;
 - `lib.mkForce` overrides;
+- Linux capabilities and permission wrappers;
 - one-time marker files and migration fallbacks;
 - cross-repository ordering between NixOS and Home Manager.
 
 When changing one of these, update the adjacent code comment and this document in the same change. Cross-repository invariants must be reviewed and tested in both repositories together. A workaround should be removed only after the original failure mode has been retested on the affected hardware or after the documented upstream fix has reached the pinned dependency state.
+
+## Shared: btop performance-monitoring capability
+
+**Invariant:** the system btop wrapper receives only `cap_perfmon+ep`. Intel RAPL `energy_uj` access remains a separate permission path through the dedicated `powercap` group in `modules/common/rapl-access.nix`.
+
+**Reason:** btop uses Linux performance-monitoring interfaces for Intel GPU statistics and CPU power monitoring. `CAP_PERFMON` provides the narrowly scoped perf-event privilege needed for those monitors without running the complete application as root or granting broad capabilities such as `CAP_SYS_ADMIN` or `CAP_DAC_READ_SEARCH`. RAPL sysfs access is deliberately not solved by broad DAC-bypass capabilities; only the specific energy counter is made group-readable.
+
+**Retest before removal/change:** run btop as the normal workstation user on the Intel-graphics profiles and verify Intel GPU statistics and CPU wattage. Confirm that no additional capability is required and that the RAPL counter remains readable only through the intended `powercap` group. Remove the wrapper only after the deployed btop/kernel stack provides the required monitoring through an unprivileged interface.
 
 ## HP Z2 Tower G9: Plasma display and panel startup ordering
 
