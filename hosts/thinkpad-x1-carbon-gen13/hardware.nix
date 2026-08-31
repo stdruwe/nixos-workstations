@@ -117,6 +117,10 @@ let
     fi
   '';
 
+  # Keep the retained splash across the Plasma login-manager hand-off. The
+  # five-second bridge is deliberate and is validated visually on cold boot;
+  # changing it can expose an intermediate console/transition frame. See
+  # docs/operational-invariants.md before simplifying the quit overrides.
   finishPlymouthAfterPlasma = pkgs.writeShellScript "finish-plymouth-after-plasma" ''
     ${pkgs.coreutils}/bin/sleep 5
     exec ${config.boot.plymouth.package}/bin/plymouth quit --retain-splash
@@ -200,7 +204,9 @@ in
   services.fprintd.enable = true;
 
   # The nixos-hardware profile enables thermald by default. On the X1 Carbon
-  # Gen 13 it exits as incompatible because of Lenovo DYTC.
+  # Gen 13 it exits as incompatible because of Lenovo DYTC. Preserve this
+  # override until thermald is explicitly retested on the real model; see
+  # docs/operational-invariants.md.
   services.thermald.enable = false;
 
   # This profile has Intel graphics only.
