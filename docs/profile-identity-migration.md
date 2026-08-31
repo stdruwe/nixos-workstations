@@ -1,171 +1,136 @@
-# Migrating to technical hardware profiles and local identity
+# Machine-local recovery state
 
-Last updated: 2026-08-29
+Last updated: 2026-08-31
 
-This guide applies only to already installed legacy states that still use `host.nix` or hostname-based profile selection. Fresh installations already create `profile.nix` and `identity.json` automatically and do not need this migration.
+The public repository and machine-specific recovery data are intentionally separate.
+The canonical local state is:
 
-Target model:
-
-- `profile.nix` selects only the technical hardware profile;
-- `identity.json` contains hostname, local username and display name;
-- both files remain local and are not committed;
-- hostname and username are not part of the technical profile name.
-
-## 1. Use the current `main` branch
-
-```bash
-cd /etc/nixos
-git switch main
-git pull --ff-only
+```text
+/etc/nixos/local/
+├── profile.nix
+├── identity.json
+└── deployment.json
 ```
 
-An old ignored `host.nix` may remain during migration. The current `configuration.nix` does not use it.
+The complete `local/` directory is ignored by Git and is the only NixOS configuration state that needs a dedicated reinstallation backup.
 
-## 2. Define local identity
+## Files
 
-First determine the intended normal desktop user:
+### `local/profile.nix`
 
-```bash
-USER_NAME="$USER"
-FULL_NAME="$(getent passwd "$USER_NAME" | cut -d: -f5 | cut -d, -f1)"
-printf 'User: %s\nDisplay name: %s\n' "$USER_NAME" "$FULL_NAME"
-```
+Selects exactly one technical hardware profile. Because the file lives one directory below the repository root, imports use `../hosts/...`:
 
-If the display name is empty or incorrect, set `FULL_NAME` appropriately before continuing.
-
-Choose the hostname and technical profile. Examples:
-
-```bash
-HOST_NAME='<hostname>'
-PROFILE='thinkpad-x1-carbon-gen13'
-```
-
-or:
-
-```bash
-HOST_NAME='<hostname>'
-PROFILE='hp-z2-tower-g9'
-```
-
-or:
-
-```bash
-HOST_NAME='<hostname>'
-PROFILE='apple-macbook-air-8-1'
-```
-
-Then create the local files:
-
-```bash
-export HOST_NAME USER_NAME FULL_NAME PROFILE
-
-nix \
-  --extra-experimental-features 'nix-command' \
-  eval \
-  --impure \
-  --json \
-  --expr '{
-    hostName = builtins.getEnv "HOST_NAME";
-    userName = builtins.getEnv "USER_NAME";
-    fullName = builtins.getEnv "FULL_NAME";
-  }' \
-  > /tmp/nixos-identity.json
-
-cat > /tmp/nixos-profile.nix <<EOF
+```nix
 { ... }:
 
 {
   imports = [
-    ./hosts/${PROFILE}/default.nix
+    ../hosts/thinkpad-x1-carbon-gen13/default.nix
   ];
 }
-EOF
-
-sudo install -o root -g wheel -m 0664 \
-  /tmp/nixos-identity.json \
-  /etc/nixos/identity.json
-
-sudo install -o root -g wheel -m 0664 \
-  /tmp/nixos-profile.nix \
-  /etc/nixos/profile.nix
-
-rm -f /tmp/nixos-identity.json /tmp/nixos-profile.nix
 ```
 
-Verify:
+Supported profiles are:
 
-```bash
-cat /etc/nixos/identity.json
-cat /etc/nixos/profile.nix
-git status --short
+```text
+thinkpad-x1-carbon-gen13
+hp-z2-tower-g9
+apple-macbook-air-8-1
 ```
 
-Because of `.gitignore`, neither `identity.json` nor `profile.nix` should appear as untracked files.
+### `local/identity.json`
 
-## 3. Validate NixOS without activation
+Contains machine-local identity data:
+
+```json
+{
+  "hostName": "example-host",
+  "userName": "example-user",
+  "fullName": "Example User"
+}
+```
+
+Hostname, username and display name are not part of the technical hardware profile.
+
+### `local/deployment.json`
+
+Contains optional private or deployment-specific declarative data. The supported schema is documented in [`deployment-json.md`](deployment-json.md).
+
+An empty deployment is represented as:
+
+```json
+{}
+```
+
+## Installer bootstrap migration
+
+The hardware installers must evaluate NixOS before the target system has been activated. For this bootstrap phase they may still create these temporary root-level files:
+
+```text
+/etc/nixos/profile.nix
+/etc/nixos/identity.json
+/etc/nixos/deployment.json
+```
+
+They are bootstrap inputs only, not the canonical runtime layout.
+
+During NixOS activation, `modules/common/local-state.nix`:
+
+1. creates `/etc/nixos/local/` with restricted `root:wheel` permissions;
+2. converts the root-level `profile.nix` import from `./hosts/...` to `../hosts/...`;
+3. moves identity and deployment data into `local/`;
+4. creates an empty `local/deployment.json` when no deployment file exists;
+5. removes the migrated root-level bootstrap files.
+
+Normal evaluation always prefers the canonical `local/` files. The root-level paths remain accepted only so an existing installation or a fresh installer can perform the migration without a broken intermediate rebuild.
+
+## Existing installations
+
+No manual file move is required. Update the repository and activate the configuration normally:
 
 ```bash
 cd /etc/nixos
-sudo nixos-rebuild build
-```
-
-Expected result:
-
-- evaluation and build succeed;
-- hostname/user changes are not yet activated;
-- the running system remains unchanged.
-
-On systems with sensitive network hardware, `build` is preferable to `switch` for this migration check.
-
-## 4. Validate Home Manager
-
-```bash
-cd "$HOME/.config/home-manager"
 git switch main
 git pull --ff-only
-```
-
-Build the Home Manager profile matching the technical hardware profile:
-
-```bash
-home-manager build --impure --flake 'path:.#thinkpad-x1-carbon-gen13'
-```
-
-or:
-
-```bash
-home-manager build --impure --flake 'path:.#hp-z2-tower-g9'
-```
-
-or:
-
-```bash
-home-manager build --impure --flake 'path:.#apple-macbook-air-8-1'
-```
-
-This step also does not activate anything.
-
-## 5. Activate
-
-Only after both NixOS and Home Manager builds succeed, activate deliberately:
-
-```bash
-cd /etc/nixos
 sudo nixos-rebuild switch
 ```
 
-Then activate the corresponding Home Manager profile, for example:
+After a successful activation, verify:
 
 ```bash
-home-manager switch --impure --flake 'path:.#thinkpad-x1-carbon-gen13'
+sudo ls -la /etc/nixos/local
+sudo cat /etc/nixos/local/profile.nix
+sudo cat /etc/nixos/local/identity.json
+sudo cat /etc/nixos/local/deployment.json
 ```
 
-## 6. Remove the legacy local selector
+The three canonical files must exist. A normal profile selector must contain `../hosts/<profile>/default.nix`.
 
-After the new model has been activated and verified, remove the obsolete local selector:
+## Backup
+
+Use:
 
 ```bash
-sudo rm -f /etc/nixos/host.nix
+sudo /etc/nixos/scripts/backup-config.sh /path/to/external-backup-directory
 ```
 
-The technical hardware selection now exists only in `profile.nix`; variable local identity exists only in `identity.json`.
+Despite its historical filename, the helper now backs up only `/etc/nixos/local/` and creates:
+
+```text
+nixos-local-<hostname>-<timestamp>.tar.zst
+nixos-local-<hostname>-<timestamp>.tar.zst.sha256
+nixos-local-<hostname>-<timestamp>.manifest.txt
+```
+
+The public Git checkout, Git history, release locks, Home Manager lock state, downloaded fonts, wallpaper, EasyEffects generated state and other reproducible data are deliberately excluded.
+
+## Restore
+
+For a reinstall or disaster recovery:
+
+1. obtain a clean checkout of the public NixOS repository at `/etc/nixos`;
+2. restore the archived `local/` directory into `/etc/nixos/local/`;
+3. verify `profile.nix`, `identity.json` and `deployment.json`;
+4. continue with the documented build/security installation process.
+
+Secure Boot keys, TPM enrollment, Tailscale state, SSH host keys, KDE Connect pairings and desktop/browser state are not part of this NixOS local-state backup.
