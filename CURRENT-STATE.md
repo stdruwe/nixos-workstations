@@ -74,10 +74,19 @@ username, full name and home directory.
 missing file is valid. It can supply:
 
 - user SSH authorized keys
+- local physical subnets that must outrank overlapping overlay routes
 - Nix remote-builder endpoint/key data
 - desktop integration data
 - user-level service endpoints consumed by Home Manager
 - Topgrade policy
+
+The canonical key reference and examples are in `docs/deployment-json.md`.
+
+`networking.localSubnets` installs policy-routing rules at priority `2500` that
+prefer specific routes from the main table while suppressing that table's
+default route. This keeps directly connected LAN traffic local when a Tailscale
+subnet route overlaps the same prefix, while still allowing the Tailscale route
+to win when the workstation is away from that LAN.
 
 Example Topgrade policy:
 
@@ -226,6 +235,13 @@ The public repository pair starts again at `v0.1.0` rather than continuing the
 private development version sequence. Both repositories must carry the same
 release tag.
 
+The tracked `lon.lock` is the NixOS release/bootstrap dependency state. The
+`Refresh NixOS release lock` workflow can be run manually before a release and
+also checks weekly. It runs `lon update`, evaluates all three profiles against
+the candidate state and commits a changed tracked lock only after successful
+validation. Installed systems continue to update their independent ignored
+`.local-sources/` state through Topgrade.
+
 The NixOS release workflow builds:
 
 ```text
@@ -248,10 +264,12 @@ development repositories are not used as installed-system upstreams.
 - Python helper syntax
 - GitHub Actions syntax via actionlint
 - all three NixOS profile evaluations
+- the deployment-local overlapping-subnet policy during profile evaluation
 - one real Plymouth theme build per profile
 
-Clean-checkout CI must not depend on local identity beyond CI fixtures,
-`deployment.json`, `.local-sources/`, wallpaper, vendor logos or ThinkPad tuning.
+Clean-checkout CI must not depend on real local identity, `.local-sources/`,
+wallpaper, vendor logos or ThinkPad tuning. The CI-only `deployment.json` is a
+documentation-range fixture rather than real infrastructure data.
 
 ## Topgrade
 
@@ -270,6 +288,13 @@ Topgrade is the central manual update workflow.
 
 Topgrade-owned messages and subprocess messages are requested in English. The
 system/user locale remains configured for German where intended.
+
+## Documentation publication
+
+Markdown under `docs/` is the canonical long-form documentation source. Selected
+pages may later be mirrored to the repository's GitHub Wiki for navigation and
+presentation, but the Wiki must not become an independently edited source of
+truth.
 
 ## Third-party provenance
 
