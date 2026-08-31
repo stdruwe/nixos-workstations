@@ -41,6 +41,15 @@ in
   # Display identities, positions and scaling are deployment-specific rather
   # than properties of the HP Z2 hardware profile. Apply them only when local
   # deployment.json provides an explicit Plasma display layout.
+  #
+  # The default 30-second delay is intentional. Plasma must first finish its
+  # initial screen/panel discovery with the login-time display state. Applying
+  # the final two-monitor layout too early caused Plasma to repeatedly create
+  # or migrate application bars/panels while the output topology was still
+  # changing. The matching Home Manager HP profile therefore waits 35 seconds
+  # before its one-time second-panel bootstrap, leaving a small margin after
+  # this display-layout timer. Do not change this delay independently without
+  # reviewing that ordering and the panel bootstrap together.
   systemd.user.services.hp-z2-tower-g9-display-layout = lib.mkIf (outputs != [ ]) {
     description = "Apply HP Z2 Tower G9 display layout";
     partOf = [ "graphical-session.target" ];

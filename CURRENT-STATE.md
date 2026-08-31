@@ -68,6 +68,19 @@ personal usernames.
 - optional builder authorization comes only from `local/deployment.json`
 - HP Plymouth logo is optional machine-local data
 - Radeon-specific `amdgpu_top` is installed only for this hardware profile
+- the deployment-specific KScreen layout is intentionally applied 30 seconds after login
+- the matching Home Manager one-time second-panel bootstrap waits 35 seconds
+- the 30 s / 35 s ordering prevents Plasma from creating unnecessary duplicate application bars/panels while the monitor topology is still settling
+
+The HP Plasma timing is a deliberate cross-repository invariant. Plasma first
+starts with the login-time display state; only after 30 seconds does NixOS apply
+the final two-monitor KScreen layout. Home Manager then leaves a five-second
+margin and performs the one-time second-panel bootstrap at 35 seconds. This
+ordering was introduced because applying the final layout and creating panels
+too early caused Plasma to create or migrate multiple application bars while
+screen topology was changing. Do not change `plasmaDisplayLayout.delaySeconds`
+or the Home Manager bootstrap delay independently; review and test both sides
+together.
 
 ### `apple-macbook-air-8-1`
 

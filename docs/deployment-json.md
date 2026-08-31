@@ -168,9 +168,24 @@ Used by the HP Z2 Tower G9 profile for the delayed Plasma display-layout
 application. Display connector identities are deployment-specific and therefore
 are intentionally not part of the public hardware profile.
 
+The default `30`-second delay is an intentional part of the HP Plasma startup
+sequence, not merely a cosmetic wait. Plasma is allowed to finish its initial
+screen and panel discovery before the final two-monitor KScreen layout is
+applied. Applying that layout too early previously caused Plasma to create or
+migrate unnecessary additional application bars/panels while the output
+topology was still changing.
+
+The matching Home Manager HP profile performs its one-time second-panel
+bootstrap after `35` seconds. That five-second margin deliberately places panel
+creation after the NixOS display-layout change. Treat the `30 s` NixOS delay and
+`35 s` Home Manager bootstrap delay as one cross-repository ordering invariant.
+Do not change `delaySeconds` independently without reviewing and testing the
+Home Manager panel bootstrap at the same time.
+
 Fields:
 
-- `delaySeconds` — number, optional; defaults to `30`.
+- `delaySeconds` — number, optional; defaults to `30`. The tested/default value
+  participates in the panel-ordering invariant described above.
 - `outputs` — non-empty array, required when `plasmaDisplayLayout` is present.
 
 Each output object supports:
