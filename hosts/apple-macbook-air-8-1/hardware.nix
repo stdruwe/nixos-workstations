@@ -9,6 +9,7 @@ let
   # upstream nixos-hardware T2 module for the surrounding hardware integration,
   # but use the same stable T2 patchset with only that obsolete subpatch removed.
   t2StableKernel = pkgs.callPackage ../../pkgs/apple-t2-linux-stable.nix {
+    inherit lib pkgs;
     nixosHardware = sources."nixos-hardware";
   };
 
