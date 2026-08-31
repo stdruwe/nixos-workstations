@@ -22,8 +22,9 @@
     libirecovery
     ideviceinstaller
     libplist
-
-    # Extended modern iOS/iPadOS diagnostics and developer interfaces.
-    python3Packages.pymobiledevice3
   ];
+
+  # pymobiledevice3 is intentionally not installed system-wide while its
+  # current nixpkgs dependency pyimg4 is marked broken. Re-enable it once the
+  # upstream asn1 compatibility issue has been resolved in nixpkgs.
 }
