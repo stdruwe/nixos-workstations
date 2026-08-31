@@ -48,5 +48,9 @@
     ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x1eac", ATTR{device}=="0x1007", ATTR{d3cold_allowed}="0"
   '';
 
+  # Preserve this bounded stop timeout until its original failure mode has been
+  # recovered or reproduced. Its historical rationale was not recorded in the
+  # public repository; do not invent one or remove the value as cleanup. See
+  # docs/operational-invariants.md.
   systemd.services.ModemManager.serviceConfig.TimeoutStopSec = "5s";
 }
