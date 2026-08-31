@@ -120,6 +120,10 @@ let
     fi
   '';
 
+  # Keep the retained splash across the Plasma login-manager hand-off. The
+  # five-second bridge is deliberate and is validated visually on cold boot;
+  # changing it can expose an intermediate console/transition frame. See
+  # docs/operational-invariants.md before simplifying the quit overrides.
   finishPlymouthAfterPlasma = pkgs.writeShellScript "finish-plymouth-after-plasma" ''
     ${pkgs.coreutils}/bin/sleep 5
     exec ${config.boot.plymouth.package}/bin/plymouth quit --retain-splash
