@@ -61,35 +61,49 @@ in
       lcdfilter = "default";
     };
 
-    # "New York Medium" is a local semantic alias. Apple ships New York as a
-    # variable family, so the alias keeps the real family name while promoting
-    # only regular-weight serif requests to Medium. Explicit Bold/Semibold
-    # requests therefore continue to resolve to their requested weight.
+    # "New York Medium" is a local semantic alias for Apple's New York
+    # variable family. Fontconfig pattern edits run before default weight
+    # substitution, so the Medium promotion is applied in the font-result pass
+    # instead. Both an explicit Regular request and Fontconfig's default Medium
+    # request are normalized to the wght=500 variable-font instance. Explicit
+    # Semibold/Bold requests never match these rules and retain their weight.
     localConf = ''
       <?xml version="1.0"?>
       <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
       <fontconfig>
-        <match target="pattern">
-          <test qual="any" name="family" compare="eq">
-            <string>serif</string>
+        <match target="font">
+          <test target="pattern" qual="any" name="family" compare="eq">
+            <string>New York Medium</string>
           </test>
-          <test name="weight" compare="eq">
+          <test target="pattern" name="weight" compare="eq">
             <const>regular</const>
           </test>
           <edit name="weight" mode="assign">
             <const>medium</const>
           </edit>
+          <edit name="style" mode="assign">
+            <string>Medium</string>
+          </edit>
+          <edit name="fontvariations" mode="assign">
+            <string>wght=500</string>
+          </edit>
         </match>
 
-        <match target="pattern">
-          <test qual="any" name="family" compare="eq">
+        <match target="font">
+          <test target="pattern" qual="any" name="family" compare="eq">
             <string>New York Medium</string>
           </test>
-          <test name="weight" compare="eq">
-            <const>regular</const>
+          <test target="pattern" name="weight" compare="eq">
+            <const>medium</const>
           </test>
           <edit name="weight" mode="assign">
             <const>medium</const>
+          </edit>
+          <edit name="style" mode="assign">
+            <string>Medium</string>
+          </edit>
+          <edit name="fontvariations" mode="assign">
+            <string>wght=500</string>
           </edit>
         </match>
       </fontconfig>
