@@ -1,7 +1,7 @@
 { lib, ... }:
 
 let
-  deploymentFile = ../../deployment.json;
+  deploymentFile = ../../local/deployment.json;
   deployment =
     if builtins.pathExists deploymentFile then
       builtins.fromJSON (builtins.readFile deploymentFile)
@@ -14,6 +14,6 @@ in
     readOnly = true;
     internal = true;
     default = deployment;
-    description = "Optional local deployment data from deployment.json.";
+    description = "Optional machine-local deployment data from local/deployment.json.";
   };
 }
