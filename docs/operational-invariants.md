@@ -64,9 +64,9 @@ The resulting HP configuration was verified with clean reboot/shutdown behavior 
 
 **Invariant:** `systemd.services.ModemManager.serviceConfig.TimeoutStopSec = "5s"` remains configured.
 
-**Historical rationale:** not yet documented in the public repository or recovered from the available prior discussion. The value predates this operational-invariant audit. Do not infer a reason from the number alone and do not remove or change it as cleanup until its original failure mode has been recovered from prior notes or reproduced on the ThinkPad.
+**Reason:** when the WWAN modem is active, ModemManager can otherwise take a very long time to stop and consequently hold up system shutdown. The five-second bound prevents an active modem from turning an ordinary shutdown into a prolonged wait.
 
-**Required follow-up before change:** determine whether the timeout protects rebuild/restart behavior, suspend/resume, modem shutdown, or another observed failure. Once confirmed, replace this paragraph with the verified reason and a concrete retest criterion.
+**Retest before changing:** shut down with WWAN disconnected and with an active registered/data-connected modem. Verify both total shutdown time and the ModemManager journal. Do not increase or remove the timeout unless the active-modem shutdown path remains acceptably fast.
 
 ## ThinkPad X1 Carbon Gen 13: HDA codec power saving
 
