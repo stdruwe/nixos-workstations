@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   refresh:
-    name: Refresh and validate lon.lock
+    name: Refresh and validate lon release state
     runs-on: ubuntu-24.04
 
     steps:
@@ -28,7 +28,7 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - name: Refresh tracked lon lock
+      - name: Refresh tracked lon state
         shell: bash
         run: |
           set +e
@@ -38,7 +38,8 @@ jobs:
 
           printf '%s\n' "$lon_output"
 
-          if [ "$lon_status" -ne 0 ] && [ "$lon_output" != "No updates available" ]; then
+          if [ "$lon_status" -ne 0 ] && \
+             ! printf '%s\n' "$lon_output" | grep -qx 'No updates available'; then
             echo "lon update failed with status $lon_status." >&2
             exit "$lon_status"
           fi
@@ -69,7 +70,7 @@ jobs:
           }
           EOF
 
-            echo "Evaluating $profile with refreshed lon.lock..."
+            echo "Evaluating $profile with refreshed lon state..."
             nix-instantiate '<nixpkgs/nixos>' \
               -A system \
               -I nixos-config="$PWD/configuration.nix" \
@@ -78,16 +79,16 @@ jobs:
 
           rm -f identity.json profile.nix
 
-      - name: Commit refreshed lock
+      - name: Commit refreshed release state
         shell: bash
         run: |
-          if git diff --quiet -- lon.lock; then
-            echo "Tracked lon.lock is already current."
+          if git diff --quiet -- lon.nix lon.lock; then
+            echo "Tracked lon release state is already current."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add lon.lock
-          git commit -m "chore(deps): refresh release lon lock"
+          git add lon.nix lon.lock
+          git commit -m "chore(deps): refresh release lon state"
           git push origin HEAD:main
