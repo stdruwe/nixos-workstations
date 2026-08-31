@@ -48,9 +48,9 @@
     ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x1eac", ATTR{device}=="0x1007", ATTR{d3cold_allowed}="0"
   '';
 
-  # Preserve this bounded stop timeout until its original failure mode has been
-  # recovered or reproduced. Its historical rationale was not recorded in the
-  # public repository; do not invent one or remove the value as cleanup. See
-  # docs/operational-invariants.md.
+  # An active WWAN modem can otherwise make shutdown wait a very long time for
+  # ModemManager to stop. Bound the stop phase to five seconds so an active
+  # modem cannot hold up system shutdown indefinitely. See
+  # docs/operational-invariants.md before changing this timeout.
   systemd.services.ModemManager.serviceConfig.TimeoutStopSec = "5s";
 }

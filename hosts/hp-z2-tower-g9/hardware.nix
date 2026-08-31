@@ -130,6 +130,11 @@ let
   '';
 in
 {
+  # Watchdogs are intentionally disabled on the HP and ThinkPad profiles. This
+  # is a deliberate workstation policy retained from earlier boot/shutdown and
+  # power-management diagnostics, not a claim that the current kernel requires
+  # NMI watchdogs to be disabled. See docs/operational-invariants.md before
+  # changing this policy.
   boot.kernelParams = [
     "nmi_watchdog=0"
     "quiet"
@@ -140,6 +145,10 @@ in
   boot.initrd.verbose = false;
   boot.consoleLogLevel = 3;
 
+  # Keep systemd from arming runtime/reboot/kexec watchdog timers. Re-enable and
+  # test each mechanism deliberately rather than treating these explicit values
+  # as redundant defaults; clean HP reboot/shutdown behavior has been verified
+  # with this no-watchdog policy, including while a virtual machine was active.
   systemd.settings.Manager = {
     RuntimeWatchdogSec = "off";
     RebootWatchdogSec = "off";
