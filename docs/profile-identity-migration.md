@@ -128,19 +128,19 @@ git pull --ff-only
 Build the Home Manager profile matching the technical hardware profile:
 
 ```bash
-home-manager build --impure --flake '.#thinkpad-x1-carbon-gen13'
+home-manager build --impure --flake 'path:.#thinkpad-x1-carbon-gen13'
 ```
 
 or:
 
 ```bash
-home-manager build --impure --flake '.#hp-z2-tower-g9'
+home-manager build --impure --flake 'path:.#hp-z2-tower-g9'
 ```
 
 or:
 
 ```bash
-home-manager build --impure --flake '.#apple-macbook-air-8-1'
+home-manager build --impure --flake 'path:.#apple-macbook-air-8-1'
 ```
 
 This step also does not activate anything.
@@ -157,7 +157,7 @@ sudo nixos-rebuild switch
 Then activate the corresponding Home Manager profile, for example:
 
 ```bash
-home-manager switch --impure --flake '.#thinkpad-x1-carbon-gen13'
+home-manager switch --impure --flake 'path:.#thinkpad-x1-carbon-gen13'
 ```
 
 ## 6. Remove the legacy local selector
