@@ -59,7 +59,7 @@ jobs:
       - name: Validate all NixOS profiles
         shell: bash
         run: |
-          mkdir -p local
+          mkdir -p fonts/apple assets/local local
 
           cat > local/identity.json <<'EOF'
           {
@@ -69,8 +69,8 @@ jobs:
           }
           EOF
 
-          cat > local/deployment.json <<'EOF'
-          {}
+          base64 -d > assets/local/wallpaper.png <<'EOF'
+          iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=
           EOF
 
           for profile in \
@@ -78,6 +78,34 @@ jobs:
             hp-z2-tower-g9 \
             apple-macbook-air-8-1
           do
+            if [ "$profile" = "thinkpad-x1-carbon-gen13" ]; then
+              cat > local/deployment.json <<'EOF'
+          {
+            "networking": {
+              "localSubnets": [
+                "192.0.2.0/24",
+                "2001:db8:1234::/64"
+              ],
+              "wwan": {
+                "connectionId": "Example WWAN",
+                "apn": "internet.example"
+              }
+            }
+          }
+          EOF
+            else
+              cat > local/deployment.json <<'EOF'
+          {
+            "networking": {
+              "localSubnets": [
+                "192.0.2.0/24",
+                "2001:db8:1234::/64"
+              ]
+            }
+          }
+          EOF
+            fi
+
             cat > local/profile.nix <<EOF
           { ... }:
 
@@ -93,9 +121,18 @@ jobs:
               -A system \
               -I nixos-config="$PWD/configuration.nix" \
               >/dev/null
+
+            if [ "$profile" = "apple-macbook-air-8-1" ]; then
+              echo "Building T2 kernel configuration with refreshed nixos-hardware..."
+              nix-build '<nixpkgs/nixos>' \
+                -A config.boot.kernelPackages.kernel.configfile \
+                --no-out-link \
+                -I nixos-config="$PWD/configuration.nix" \
+                >/dev/null
+            fi
           done
 
-          rm -rf local
+          rm -rf local fonts/apple assets/local
 
       - name: Commit refreshed release state
         shell: bash
