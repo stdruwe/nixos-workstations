@@ -109,6 +109,16 @@ The resulting HP configuration was verified with clean reboot/shutdown behavior 
 
 **Retest before removal:** only revisit asynchronous suspend after a new T2/model-specific kernel fix or other material suspend-path change. Test repeated deep suspend/resume cycles, internal display recovery, keyboard/trackpad recovery, WLAN and T2 USB re-enumeration before considering `pm_async=off` removable.
 
+## Apple MacBook Air 8,1: T2 stable-kernel patch compatibility
+
+**Invariant:** the profile keeps `hardware.apple-t2.kernelChannel = "stable"`, but forces `boot.kernelPackages` to the local `pkgs/apple-t2-linux-stable.nix` wrapper. That wrapper consumes the exact pinned nixos-hardware stable T2 patch list and removes only the obsolete Asahi subpatch 12/18 (`HID: magicmouse: Add .reset_resume for SPI trackpads`). The T2 `hid-magicmouse` support itself, including the T2-trackpad patches, must remain enabled.
+
+**Reason:** Linux 6.18.48 added its own `magicmouse_reset_resume()` implementation and `.reset_resume` driver member. The older T2/Asahi subpatch tries to add a second implementation: its first hunk can still apply while its second hunk fails, which prevents the T2 kernel configuration derivation and therefore the complete NixOS system candidate from building. The internal T2 trackpad is intentionally handled by `hid-magicmouse`; removing that driver or the T2 trackpad support patches would break the supported input path rather than solve the compatibility issue.
+
+The wrapper validates that the expected obsolete subpatch commit is still present before filtering it. A changed upstream patch bundle therefore fails loudly instead of silently carrying this workaround forward. NixOS appends the profile's normal `boot.kernelPatches` after the forced kernel package, so the BCM4355 NDOE workaround remains independent and active.
+
+**Removal criterion:** remove the local kernel wrapper and `lib.mkForce` override only after the pinned nixos-hardware/T2 stable patchset no longer contains the obsolete reset-resume subpatch and its unmodified stable kernel builds against the current nixos-unstable Linux 6.18 package. On the real MacBook, retest internal trackpad gestures/clicking, keyboard, suspend/resume including post-resume trackpad recovery, audio and WLAN before accepting the upstream path.
+
 ## Apple MacBook Air 8,1: EFI NVRAM writes
 
 **Invariant:** `boot.loader.efi.canTouchEfiVariables = false`.
