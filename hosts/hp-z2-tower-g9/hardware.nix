@@ -210,8 +210,12 @@ in
   hardware.bluetooth.enable = true;
 
   # Intel UHD Graphics 770 and Radeon RX 7600 XT run in parallel through the
-  # generic nixos-hardware profiles imported by base.nix.
-  hardware.graphics.enable = true;
+  # generic nixos-hardware profiles imported by base.nix. ROCm CLR adds the
+  # AMD OpenCL ICD so compute applications can use the discrete RDNA3 GPU.
+  hardware.graphics = {
+    enable = true;
+    extraPackages = [ pkgs.rocmPackages.clr.icd ];
+  };
 
   environment.systemPackages = [ nvtopIntelAmd ];
 }
