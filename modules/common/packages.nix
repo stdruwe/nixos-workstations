@@ -22,6 +22,21 @@ let
   zenBrowser = pkgs.wrapFirefox zenUnwrapped {
     icon = "zen-browser";
   };
+
+  # Bitwarden prefers memfd_secret for its in-memory key container on Linux.
+  # The kernel deliberately disables hibernation while secret memory exists,
+  # which also prevents suspend-then-hibernate. Force Bitwarden to use its
+  # supported keyctl backend instead; the workstation swap lives inside LUKS2.
+  bitwardenDesktop = pkgs.symlinkJoin {
+    name = "bitwarden-desktop-keyctl";
+    paths = [ pkgs.bitwarden-desktop ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+
+    postBuild = ''
+      wrapProgram "$out/bin/bitwarden" \
+        --set SECURE_KEY_CONTAINER_BACKEND keyctl
+    '';
+  };
 in
 {
   nixpkgs.config.allowUnfree = true;
@@ -89,7 +104,7 @@ in
       mpv
       plezy
       zenBrowser
-      bitwarden-desktop
+      bitwardenDesktop
       obsidian
       kitty
       vlc
