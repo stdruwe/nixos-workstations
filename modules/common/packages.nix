@@ -37,6 +37,40 @@ let
         --set SECURE_KEY_CONTAINER_BACKEND keyctl
     '';
   };
+
+  # Keep Threema on the phone-bound Threema Web architecture instead of the
+  # legacy Desktop 1.x package or the independent Desktop 2.x multi-device
+  # client. Chromium runs it as an isolated app with its own persistent profile,
+  # so Threema session data is not shared with the user's normal browsers.
+  threemaWebLauncher = pkgs.writeShellScriptBin "threema-web" ''
+    exec ${pkgs.chromium}/bin/chromium \
+      --app=https://web.threema.ch/ \
+      --user-data-dir="$HOME/.local/share/threema-web/chromium" \
+      --no-first-run \
+      --no-default-browser-check \
+      "$@"
+  '';
+
+  threemaWebDesktop = pkgs.makeDesktopItem {
+    name = "threema-web";
+    desktopName = "Threema Web";
+    genericName = "Instant Messenger";
+    comment = "Threema Web in an isolated Chromium profile";
+    exec = "threema-web";
+    icon = "web-browser";
+    categories = [
+      "Network"
+      "InstantMessaging"
+    ];
+  };
+
+  threemaWeb = pkgs.symlinkJoin {
+    name = "threema-web";
+    paths = [
+      threemaWebLauncher
+      threemaWebDesktop
+    ];
+  };
 in
 {
   nixpkgs.config.allowUnfree = true;
@@ -150,7 +184,7 @@ in
       # Desktop communication clients.
       signal-desktop
       element-desktop
-      threema-desktop
+      threemaWeb
 
       # E-books and database administration.
       calibre
