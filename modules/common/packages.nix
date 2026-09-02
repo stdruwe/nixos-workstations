@@ -131,6 +131,34 @@ in
       qrencode
       yt-dlp
       ffmpeg
+
+      # Desktop synchronization, file transfer, diffing and diagrams.
+      nextcloud-client
+      localsend
+      meld
+      drawio
+
+      # Video editing, recording and transcoding.
+      kdePackages.kdenlive
+      obs-studio
+      handbrake
+
+      # Audio editing and PipeWire routing diagnostics.
+      audacity
+      qpwgraph
+
+      # Desktop communication clients.
+      signal-desktop
+      element-desktop
+      threema-desktop
+
+      # E-books and database administration.
+      calibre
+      dbeaver-bin
+
+      # Additional raster graphics tooling.
+      krita
+
       (python3.withPackages (
         ps: with ps; [
           numpy
