@@ -29,9 +29,9 @@
       "owner": "NixOS",
       "repo": "nixos-hardware",
       "branch": "master",
-      "revision": "dc3f0cfde2050172abf6c3cdb684f735c15a57c5",
-      "url": "https://github.com/NixOS/nixos-hardware/archive/dc3f0cfde2050172abf6c3cdb684f735c15a57c5.tar.gz",
-      "hash": "sha256-cmOd3iGoE140M2GidgQMQbyxHZ4dT7C0QZq2+CrXQyA="
+      "revision": "44d95795ee2d475b3d687325e26dcf4ca9104557",
+      "url": "https://github.com/NixOS/nixos-hardware/archive/44d95795ee2d475b3d687325e26dcf4ca9104557.tar.gz",
+      "hash": "sha256-3jBEq8avfzlrsY4UpW4d5TOmm7ocseZfnitEJhqauyc="
     },
     "rust-overlay": {
       "type": "GitHub",
@@ -50,9 +50,9 @@
       "owner": "0xc000022070",
       "repo": "zen-browser-flake",
       "branch": "main",
-      "revision": "82589d1716b7d4de8e17e77b92b67952b7e3da96",
-      "url": "https://github.com/0xc000022070/zen-browser-flake/archive/82589d1716b7d4de8e17e77b92b67952b7e3da96.tar.gz",
-      "hash": "sha256-27Q1HjIybCEOHqGrP/LOtSnIb4Rmek3Ochi7Trl90Y4="
+      "revision": "c23f077620acaf093f581172604656f59d450b46",
+      "url": "https://github.com/0xc000022070/zen-browser-flake/archive/c23f077620acaf093f581172604656f59d450b46.tar.gz",
+      "hash": "sha256-EYvJQO94UaWA+a6q93pUxvJ9+nULWvwgBQYvR1h3fLI="
     }
   }
 }
