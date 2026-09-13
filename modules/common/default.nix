@@ -13,6 +13,7 @@
     ./home-manager-initial.nix
     ./rapl-access.nix
     ./programs.nix
+    ./plasma-browser-integration.nix
     ./fastfetch.nix
     ./users.nix
     ./packages.nix
