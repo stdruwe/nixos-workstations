@@ -27,6 +27,22 @@ let
     "font.name.serif.x-unicode" = lockedPreference "New York Medium";
     "font.name.monospace.x-unicode" = lockedPreference "SF Mono";
   };
+
+  # The upstream NixOS Plasma module adds plasma-browser-integration to
+  # Firefox's native messaging host packages. Reuse that existing declaration
+  # as the condition for installing the matching WebExtension, so COSMIC does
+  # not receive Plasma-specific browser integration.
+  plasmaBrowserIntegrationEnabled =
+    builtins.elem
+      pkgs.kdePackages.plasma-browser-integration
+      config.programs.firefox.nativeMessagingHosts.packages;
+
+  plasmaBrowserExtensionSettings = pkgs.lib.optionalAttrs plasmaBrowserIntegrationEnabled {
+    "plasma-browser-integration@kde.org" = {
+      install_url = "https://addons.mozilla.org/firefox/downloads/latest/plasma-integration/latest.xpi";
+      installation_mode = "force_installed";
+    };
+  };
 in
 {
   # Zen Browser carries these nixpkgs Firefox policies into its own
@@ -37,6 +53,7 @@ in
     // {
       "general.autoScroll" = autoScrollPreference;
     };
+  nixpkgs.config.firefox.policies.ExtensionSettings = plasmaBrowserExtensionSettings;
 
   programs.firefox = {
     enable = true;
@@ -68,7 +85,7 @@ in
           install_url = "https://addons.mozilla.org/firefox/downloads/latest/sponsorblock/latest.xpi";
           installation_mode = "normal_installed";
         };
-      };
+      } // plasmaBrowserExtensionSettings;
     };
   };
 
