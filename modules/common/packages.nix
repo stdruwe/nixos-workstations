@@ -21,6 +21,12 @@ let
   };
   zenBrowser = pkgs.wrapFirefox zenUnwrapped {
     icon = "zen-browser";
+
+    # Keep Zen aligned with the native messaging hosts already selected by
+    # NixOS for Firefox. Plasma contributes plasma-browser-integration through
+    # its upstream NixOS module; wrapFirefox then exposes those manifests in
+    # the Mozilla per-user path that Zen currently reads on Linux.
+    nativeMessagingHosts = config.programs.firefox.nativeMessagingHosts.packages;
   };
 
   # Bitwarden prefers memfd_secret for its in-memory key container on Linux.
