@@ -218,6 +218,10 @@ PYTHON
   '';
 in
 {
+  imports = [
+    ./plasma-browser-integration.nix
+  ];
+
   services.displayManager.plasma-login-manager.enable = true;
 
   # Plasma Login Manager uses nested KConfig groups such as
