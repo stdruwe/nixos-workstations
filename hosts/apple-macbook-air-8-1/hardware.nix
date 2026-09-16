@@ -1,18 +1,6 @@
-{ lib, pkgs, ... }:
+{ pkgs, ... }:
 
 let
-  localSources = ../../.local-sources/lon.nix;
-  sources = import (if builtins.pathExists localSources then localSources else ../../lon.nix);
-
-  # Linux 6.18.48 gained a magicmouse reset-resume implementation that
-  # conflicts with patch 12/18 in the pinned T2/Asahi trackpad bundle. Keep the
-  # upstream nixos-hardware T2 module for the surrounding hardware integration,
-  # but use the same stable T2 patchset with only that obsolete subpatch removed.
-  t2StableKernel = import ../../pkgs/apple-t2-linux-stable.nix {
-    inherit lib pkgs;
-    nixosHardware = sources."nixos-hardware";
-  };
-
   # Temporary workaround for NixOS/nixos-hardware#1933. The pinned
   # nixos-hardware revision still extracts the Apple recovery image through
   # vmTools.runInLinuxVM, which can fail without producing an exit code.
@@ -30,6 +18,10 @@ in
 {
   # Verified hardware: MacBookAir8,1 (2018), Intel Core i5-8210Y,
   # Intel UHD Graphics 617, Apple T2 and 16 GiB RAM.
+  # Use the stable kernel package directly from the pinned nixos-hardware T2
+  # module. The candidate nixos-hardware revision carries the matching T2
+  # patchset for the current Linux 6.18 series, so no local kernel wrapper is
+  # maintained here.
   hardware.apple-t2 = {
     kernelChannel = "stable";
 
@@ -41,11 +33,6 @@ in
       version = "sonoma";
     };
   };
-
-  # Override only the kernel package selected by the upstream T2 module. NixOS
-  # still appends boot.kernelPatches afterwards, so the profile-specific
-  # brcmfmac NDOE workaround remains part of the final kernel.
-  boot.kernelPackages = lib.mkForce (pkgs.linuxPackagesFor t2StableKernel);
 
   # Keep the Sonoma T2 Broadcom firmware first, then add the standard Linux
   # firmware set required by i915. In particular, the MacBookAir8,1 needs
