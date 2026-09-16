@@ -26,12 +26,12 @@
     "nixos-hardware": {
       "type": "GitHub",
       "fetchType": "tarball",
-      "owner": "NixOS",
+      "owner": "soopyc",
       "repo": "nixos-hardware",
-      "branch": "master",
-      "revision": "24cfdc1f9344b90a1eee329a3906e2f39f4d0f1e",
-      "url": "https://github.com/NixOS/nixos-hardware/archive/24cfdc1f9344b90a1eee329a3906e2f39f4d0f1e.tar.gz",
-      "hash": "sha256-vL/Fpo7Zxa7wvO8V5FAToUBvP+K3XsMB1wUglTtd/J0="
+      "branch": "apple-t2-updates",
+      "revision": "9d1d3c914e2c951fbcad437d1faa9661af4ae44f",
+      "url": "https://github.com/soopyc/nixos-hardware/archive/9d1d3c914e2c951fbcad437d1faa9661af4ae44f.tar.gz",
+      "hash": "sha256-T2U2TV2+mBaRp49MijyAs+3oVotkDMvThgNGgPcLj5g="
     },
     "rust-overlay": {
       "type": "GitHub",
