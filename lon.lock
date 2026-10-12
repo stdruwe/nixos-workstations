@@ -29,9 +29,9 @@
       "owner": "soopyc",
       "repo": "nixos-hardware",
       "branch": "apple-t2-updates",
-      "revision": "d0be0faee6885202d213df863c9d436445cfd505",
-      "url": "https://github.com/soopyc/nixos-hardware/archive/d0be0faee6885202d213df863c9d436445cfd505.tar.gz",
-      "hash": "sha256-9jLDk175t6Tvjzae6ApA24BqiGSt2jkwxbBFFL51wSM="
+      "revision": "7082b484432124bd8d53790a11b808429b73fb6b",
+      "url": "https://github.com/soopyc/nixos-hardware/archive/7082b484432124bd8d53790a11b808429b73fb6b.tar.gz",
+      "hash": "sha256-AUX62uKym9uJgqNQ4pCoTB0fEdyHqpSBNcSolAidalg="
     },
     "rust-overlay": {
       "type": "GitHub",
@@ -50,9 +50,9 @@
       "owner": "0xc000022070",
       "repo": "zen-browser-flake",
       "branch": "main",
-      "revision": "e56900732d1fa6f360db502451a457ffe3ca1e6e",
-      "url": "https://github.com/0xc000022070/zen-browser-flake/archive/e56900732d1fa6f360db502451a457ffe3ca1e6e.tar.gz",
-      "hash": "sha256-jr7YVkvOYS+bJjzBwoqtN8b8inJN8UDWziWufAWH1SY="
+      "revision": "a6e68f44a3c4b326ebd9f007550f8a3350ad3cf5",
+      "url": "https://github.com/0xc000022070/zen-browser-flake/archive/a6e68f44a3c4b326ebd9f007550f8a3350ad3cf5.tar.gz",
+      "hash": "sha256-2UlAIie3kiZYSlqFlwniaJrMwKeFKOiM1radCrrKWfs="
     }
   }
 }
